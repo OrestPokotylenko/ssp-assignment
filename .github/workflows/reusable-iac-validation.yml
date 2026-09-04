@@ -39,4 +39,4 @@ jobs:
           scan-ref: .generated/main.json
           format: table
           severity: HIGH,CRITICAL
-          exit-code: '1'
+          exit-code: "1"

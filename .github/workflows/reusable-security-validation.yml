@@ -23,4 +23,4 @@ jobs:
           scan-ref: .
           scanners: secret
           format: table
-          exit-code: '1'
+          exit-code: "1"

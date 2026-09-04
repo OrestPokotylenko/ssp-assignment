@@ -1,49 +1,62 @@
-name: PR Validation
+name: Deploy DEV
 
 on:
-  pull_request:
+  push:
     branches:
       - develop
-      - main
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - ready_for_review
+
+  workflow_dispatch:
 
 permissions:
   contents: read
+  id-token: write
+  actions: read
+  packages: read
+  security-events: write
 
 concurrency:
-  group: pr-validation-${{ github.event.pull_request.number }}
+  group: deploy-development
   cancel-in-progress: true
 
 jobs:
   dotnet:
-    name: .NET Quality
-    if: github.event.pull_request.draft == false
+    name: .NET Validation
     uses: ./.github/workflows/reusable-dotnet-validation.yml
     with:
       solution: WeatherPix.slnx
 
   security:
-    name: Repository Security
-    if: github.event.pull_request.draft == false
+    name: Security Validation
     uses: ./.github/workflows/reusable-security-validation.yml
 
   infrastructure:
-    name: Infrastructure
-    if: github.event.pull_request.draft == false
+    name: Infrastructure Validation
     uses: ./.github/workflows/reusable-iac-validation.yml
     with:
       bicep-file: infra/main.bicep
 
   codeql:
     name: CodeQL
-    if: github.event.pull_request.draft == false
     permissions:
       contents: read
       actions: read
       packages: read
       security-events: write
     uses: ./.github/workflows/reusable-codeql-validation.yml
+
+  deploy:
+    name: Deploy DEV
+    needs:
+      - dotnet
+      - security
+      - infrastructure
+      - codeql
+
+    permissions:
+      contents: read
+      id-token: write
+
+    uses: ./.github/workflows/reusable-deploy.yml
+    with:
+      environment: development
+      parameter-file: infra/parameters/dev.bicepparam
