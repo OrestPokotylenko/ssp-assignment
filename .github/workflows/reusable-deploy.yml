@@ -1,0 +1,121 @@
+name: Reusable - Azure Deployment
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+
+      parameter-file:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    name: Deploy to Azure
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    environment:
+      name: ${{ inputs.environment }}
+
+    env:
+      AZURE_PRINCIPAL_ID: ${{ vars.AZURE_PRINCIPAL_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore WeatherPix.slnx
+
+      - name: Publish Function App
+        run: >
+          dotnet publish
+          src/WeatherPix.Functions/WeatherPix.Functions.csproj
+          --configuration Release
+          --no-restore
+          --output ./publish
+
+      - name: Login to Azure
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Infrastructure what-if
+        run: >
+          az deployment sub what-if
+          --location francecentral
+          --parameters "${{ inputs.parameter-file }}"
+
+      - name: Deploy infrastructure
+        id: infrastructure
+        shell: bash
+        run: |
+          DEPLOYMENT_NAME="weatherpix-${{ inputs.environment }}-${{ github.run_number }}"
+
+          az deployment sub create \
+            --name "$DEPLOYMENT_NAME" \
+            --location francecentral \
+            --parameters "${{ inputs.parameter-file }}"
+
+          RESOURCE_GROUP=$(az deployment sub show \
+            --name "$DEPLOYMENT_NAME" \
+            --query "properties.outputs.resourceGroupName.value" \
+            --output tsv)
+
+          FUNCTION_APP=$(az deployment sub show \
+            --name "$DEPLOYMENT_NAME" \
+            --query "properties.outputs.functionAppName.value" \
+            --output tsv)
+
+          KEY_VAULT=$(az deployment sub show \
+            --name "$DEPLOYMENT_NAME" \
+            --query "properties.outputs.keyVaultName.value" \
+            --output tsv)
+
+          echo "resource_group=$RESOURCE_GROUP" >> "$GITHUB_OUTPUT"
+          echo "function_app=$FUNCTION_APP" >> "$GITHUB_OUTPUT"
+          echo "key_vault=$KEY_VAULT" >> "$GITHUB_OUTPUT"
+
+      - name: Store Pexels API key
+        shell: bash
+        env:
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          KEY_VAULT: ${{ steps.infrastructure.outputs.key_vault }}
+        run: |
+          for attempt in {1..6}; do
+            if az keyvault secret set \
+              --vault-name "$KEY_VAULT" \
+              --name "pexels-api-key" \
+              --value "$PEXELS_API_KEY" \
+              --output none; then
+
+              echo "Secret stored successfully."
+              exit 0
+            fi
+
+            echo "Waiting for RBAC propagation..."
+            sleep 10
+          done
+
+          echo "Failed to store Pexels API key."
+          exit 1
+
+      - name: Deploy Function App
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ steps.infrastructure.outputs.function_app }}
+          package: ./publish
