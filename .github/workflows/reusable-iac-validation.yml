@@ -1,0 +1,42 @@
+name: Reusable - IaC Validation
+
+on:
+  workflow_call:
+    inputs:
+      bicep-file:
+        description: Main Bicep entrypoint
+        required: false
+        type: string
+        default: infra/main.bicep
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Bicep
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Bicep CLI
+        run: az bicep install
+
+      - name: Build and lint Bicep
+        run: |
+          mkdir -p .generated
+          az bicep build \
+            --file "${{ inputs.bicep-file }}" \
+            --outfile .generated/main.json
+
+      - name: Scan Azure infrastructure
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: config
+          scan-ref: .generated/main.json
+          format: table
+          severity: HIGH,CRITICAL
+          exit-code: '1'
