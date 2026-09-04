@@ -427,3 +427,17 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# Azure Functions local settings
+local.settings.json
+
+# Local environment overrides
+.env.*
+!.env.example
+
+# Azurite local storage
+.azurite/
+
+# Local Bicep parameters that may contain secrets
+*.local.bicepparam
+*.local.parameters.json

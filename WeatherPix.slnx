@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="src/WeatherPix.Application/WeatherPix.Application.csproj" Id="80f5a95a-e807-4075-8ddd-b58442e05406" />
+  <Project Path="src/WeatherPix.Domain/WeatherPix.Domain.csproj" Id="d8a42fa1-c681-4ff7-a106-8f767b84e9cd" />
+  <Project Path="src/WeatherPix.Functions/WeatherPix.Functions.csproj" />
+  <Project Path="src/WeatherPix.Infrastructure/WeatherPix.Infrastructure.csproj" Id="32d1ffdb-2874-4946-9932-793f60f697c6" />
+</Solution>
