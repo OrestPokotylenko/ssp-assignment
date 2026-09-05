@@ -5,5 +5,3 @@ param location = 'francecentral'
 
 param functionInstanceMemoryMB = 2048
 param functionMaximumInstanceCount = 10
-
-param deploymentPrincipalId = readEnvironmentVariable('AZURE_PRINCIPAL_ID')

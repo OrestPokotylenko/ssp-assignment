@@ -1,5 +1,5 @@
 param principalId string
-param deploymentPrincipalId string
+param deploymentPrincipalId string = ''
 
 param storageAccountName string
 param serviceBusNamespaceName string
@@ -18,6 +18,8 @@ var serviceBusDataReceiverRoleId = '4f6d3b9b-027b-4f4c-9142-0e5a2a2247e0'
 var keyVaultSecretsUserRoleId = '4633458b-17de-408a-b874-0445c86b69e6'
 var keyVaultSecretsOfficerRoleId = 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7'
 
+var shouldCreateDeploymentRbac = !empty(deploymentPrincipalId)
+
 resource storageAccount 'Microsoft.Storage/storageAccounts@2024-01-01' existing = {
   name: storageAccountName
 }
@@ -31,7 +33,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
 }
 
 // Key Vault
-resource deploymentKeyVaultSecretsOfficer 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource deploymentKeyVaultSecretsOfficer 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (shouldCreateDeploymentRbac) {
   name: guid(keyVault.id, deploymentPrincipalId, keyVaultSecretsOfficerRoleId)
   scope: keyVault
 

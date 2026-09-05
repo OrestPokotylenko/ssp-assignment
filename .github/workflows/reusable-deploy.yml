@@ -24,9 +24,6 @@ jobs:
     environment:
       name: ${{ inputs.environment }}
 
-    env:
-      AZURE_PRINCIPAL_ID: ${{ vars.AZURE_PRINCIPAL_ID }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -55,10 +52,12 @@ jobs:
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       - name: Infrastructure what-if
-        run: >
-          az deployment sub what-if
-          --location francecentral
-          --parameters "${{ inputs.parameter-file }}"
+        shell: bash
+        run: |
+          az deployment sub what-if \
+            --location francecentral \
+            --parameters "${{ inputs.parameter-file }}" \
+            --parameters deploymentPrincipalId="${{ vars.AZURE_PRINCIPAL_ID }}"
 
       - name: Deploy infrastructure
         id: infrastructure
@@ -69,7 +68,9 @@ jobs:
           az deployment sub create \
             --name "$DEPLOYMENT_NAME" \
             --location francecentral \
-            --parameters "${{ inputs.parameter-file }}"
+            --parameters "${{ inputs.parameter-file }}" \
+            --parameters deploymentPrincipalId="${{ vars.AZURE_PRINCIPAL_ID }}" \
+            --output none
 
           RESOURCE_GROUP=$(az deployment sub show \
             --name "$DEPLOYMENT_NAME" \
@@ -96,7 +97,14 @@ jobs:
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           KEY_VAULT: ${{ steps.infrastructure.outputs.key_vault }}
         run: |
+          if [ -z "$PEXELS_API_KEY" ]; then
+            echo "PEXELS_API_KEY is missing."
+            exit 1
+          fi
+
           for attempt in {1..6}; do
+            echo "Attempt $attempt to store Pexels API key..."
+
             if az keyvault secret set \
               --vault-name "$KEY_VAULT" \
               --name "pexels-api-key" \
