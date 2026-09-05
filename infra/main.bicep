@@ -10,7 +10,7 @@ param location string = 'francecentral'
 param projectName string = 'weatherpix'
 param pexelsSecretName string = 'pexels-api-key'
 
-param deploymentPrincipalId string
+param deploymentPrincipalId string = ''
 
 @allowed([
   512
