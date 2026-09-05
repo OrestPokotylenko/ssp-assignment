@@ -60,3 +60,5 @@ jobs:
     with:
       environment: production
       parameter-file: infra/parameters/prod.bicepparam
+
+    secrets: inherit
