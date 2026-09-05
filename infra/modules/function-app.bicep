@@ -108,8 +108,7 @@ resource appSettings 'Microsoft.Web/sites/config@2024-04-01' = {
     Storage__GeneratedImagesContainerName: generatedImagesContainerName
     Storage__JobStatusTableName: jobStatusTableName
 
-    KeyVault__VaultUri: keyVaultUri
-    KeyVault__PexelsSecretName: pexelsSecretName
+    Pexels__ApiKey: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/${pexelsSecretName}/)'
   }
 }
 

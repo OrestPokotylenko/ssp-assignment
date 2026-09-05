@@ -28,6 +28,11 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2024-01-01' = {
     defaultToOAuthAuthentication: true
 
     publicNetworkAccess: 'Enabled'
+
+    sasPolicy: {
+      sasExpirationPeriod: '00.00:15:00'
+      expirationAction: 'Block'
+    }
   }
 }
 
@@ -51,6 +56,47 @@ resource deploymentContainer 'Microsoft.Storage/storageAccounts/blobServices/con
 
   properties: {
     publicAccess: 'None'
+  }
+}
+
+resource lifecyclePolicy 'Microsoft.Storage/storageAccounts/managementPolicies@2024-01-01' = {
+  parent: storageAccount
+  name: 'default'
+
+  properties: {
+    policy: {
+      rules: [
+        {
+          name: 'generated-images-lifecycle'
+          enabled: true
+          type: 'Lifecycle'
+
+          definition: {
+            filters: {
+              blobTypes: [
+                'blockBlob'
+              ]
+
+              prefixMatch: [
+                '${generatedImagesContainerName}/'
+              ]
+            }
+
+            actions: {
+              baseBlob: {
+                tierToCool: {
+                  daysAfterModificationGreaterThan: 1
+                }
+
+                delete: {
+                  daysAfterModificationGreaterThan: 7
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
   }
 }
 
