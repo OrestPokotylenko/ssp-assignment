@@ -60,3 +60,5 @@ jobs:
     with:
       environment: development
       parameter-file: infra/parameters/dev.bicepparam
+
+    secrets: inherit
