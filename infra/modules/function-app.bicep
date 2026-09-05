@@ -57,7 +57,6 @@ resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
 
   properties: {
     serverFarmId: hostingPlan.id
-
     httpsOnly: true
 
     siteConfig: {
@@ -94,9 +93,6 @@ resource appSettings 'Microsoft.Web/sites/config@2024-04-01' = {
   name: 'appsettings'
 
   properties: {
-    FUNCTIONS_EXTENSION_VERSION: '~4'
-    FUNCTIONS_WORKER_RUNTIME: 'dotnet-isolated'
-
     AzureWebJobsStorage__accountName: storageAccountName
     AzureWebJobsStorage__credential: 'managedidentity'
 
@@ -120,5 +116,4 @@ resource appSettings 'Microsoft.Web/sites/config@2024-04-01' = {
 output id string = functionApp.id
 output name string = functionApp.name
 output principalId string = functionApp.identity.principalId
-
 output defaultHostname string = functionApp.properties.defaultHostName
