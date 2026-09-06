@@ -3,8 +3,13 @@
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
   </Folder>
-  <Project Path="src/WeatherPix.Application/WeatherPix.Application.csproj" Id="80f5a95a-e807-4075-8ddd-b58442e05406" />
-  <Project Path="src/WeatherPix.Domain/WeatherPix.Domain.csproj" Id="d8a42fa1-c681-4ff7-a106-8f767b84e9cd" />
-  <Project Path="src/WeatherPix.Functions/WeatherPix.Functions.csproj" />
-  <Project Path="src/WeatherPix.Infrastructure/WeatherPix.Infrastructure.csproj" Id="32d1ffdb-2874-4946-9932-793f60f697c6" />
+  <Folder Name="/src/">
+    <Project Path="src/WeatherPix.Application/WeatherPix.Application.csproj" Id="80f5a95a-e807-4075-8ddd-b58442e05406" />
+    <Project Path="src/WeatherPix.Domain/WeatherPix.Domain.csproj" Id="d8a42fa1-c681-4ff7-a106-8f767b84e9cd" />
+    <Project Path="src/WeatherPix.Functions/WeatherPix.Functions.csproj" />
+    <Project Path="src/WeatherPix.Infrastructure/WeatherPix.Infrastructure.csproj" Id="32d1ffdb-2874-4946-9932-793f60f697c6" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/WeatherPix.Application.Tests/WeatherPix.Application.Tests.csproj" Id="395494a1-7c0f-49a1-93ae-cd68b78c24c7" />
+  </Folder>
 </Solution>

@@ -19,4 +19,9 @@
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\WeatherPix.Application\WeatherPix.Application.csproj" />
+    <ProjectReference Include="..\WeatherPix.Infrastructure\WeatherPix.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>
