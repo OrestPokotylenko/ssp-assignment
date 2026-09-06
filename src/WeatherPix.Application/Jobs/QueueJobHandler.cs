@@ -1,4 +1,5 @@
-﻿using WeatherPix.Application.Abstractions;
+﻿using Microsoft.Extensions.Logging;
+using WeatherPix.Application.Abstractions;
 using WeatherPix.Application.Common.Results;
 using WeatherPix.Domain.Jobs;
 
@@ -6,10 +7,13 @@ namespace WeatherPix.Application.Jobs;
 
 public class QueueJobHandler(
     IJobQueuePublisher queuePublisher, 
-    IJobStatusRepository jobStatusRepository) : IQueueJobHandler
+    IJobStatusRepository jobStatusRepository,
+    ILogger<QueueJobHandler> logger) : IQueueJobHandler
 {
     private readonly IJobQueuePublisher _queuePublisher = queuePublisher;
     private readonly IJobStatusRepository _jobStatusRepository = jobStatusRepository;
+
+    private readonly ILogger<QueueJobHandler> _logger = logger;
 
     public async Task<Result<Guid>> QueueJobAsync(CancellationToken ct)
     {
@@ -21,7 +25,13 @@ public class QueueJobHandler(
         }
         catch (Exception ex)
         {
-            return Result<Guid>.FailureWith(new Error("Job.CreationFailed", ex.Message));
+            _logger.LogError(
+                ex,
+                "Failed to create job record for operation {OperationId}",
+                job.OperationId);
+
+            return Result<Guid>.FailureWith(
+                JobErrors.CreationFailed);
         }
 
         try
@@ -30,11 +40,27 @@ public class QueueJobHandler(
         }
         catch (Exception ex)
         {
-            await _jobStatusRepository.MarkFailedAsync(
-                job.OperationId,
-                ct);
+            _logger.LogError(
+                ex,
+                "Failed to publish job {OperationId} to Service Bus",
+                job.OperationId);
 
-            return Result<Guid>.FailureWith(new Error("Job.CreationFailed", ex.Message));
+            try
+            {
+                await _jobStatusRepository.MarkFailedAsync(
+                    job.OperationId,
+                    ct);
+            }
+            catch (Exception statusUpdateException)
+            {
+                _logger.LogError(
+                    statusUpdateException,
+                    "Failed to mark job {OperationId} as failed",
+                    job.OperationId);
+            }
+
+            return Result<Guid>.FailureWith(
+                JobErrors.QueueFailed);
         }
 
         return Result<Guid>.Success(job.OperationId);
