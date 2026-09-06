@@ -6,7 +6,7 @@ namespace WeatherPix.Infrastructure.DependencyInjection;
 public static class InfrastructureServiceCollectionExtensions
 {
     public static IServiceCollection AddInfrastructure(
-        this IServiceCollection services, 
+        this IServiceCollection services,
         IConfiguration cfg)
     {
         services.AddServiceBus(cfg);

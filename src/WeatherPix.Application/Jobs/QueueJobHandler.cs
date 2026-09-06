@@ -6,7 +6,7 @@ using WeatherPix.Domain.Jobs;
 namespace WeatherPix.Application.Jobs;
 
 public class QueueJobHandler(
-    IJobQueuePublisher queuePublisher, 
+    IJobQueuePublisher queuePublisher,
     IJobStatusRepository jobStatusRepository,
     ILogger<QueueJobHandler> logger) : IQueueJobHandler
 {

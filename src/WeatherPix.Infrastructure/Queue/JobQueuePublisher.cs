@@ -9,7 +9,7 @@ namespace WeatherPix.Infrastructure.Queue;
 
 public class JobQueuePublisher(ServiceBusClient client, IOptions<ServiceBusOptions> options) : IJobQueuePublisher
 {
-    private readonly ServiceBusSender _sender = 
+    private readonly ServiceBusSender _sender =
         client.CreateSender(options.Value.StartJobsQueueName);
 
     public async Task PublishJobAsync(Job job, CancellationToken ct)

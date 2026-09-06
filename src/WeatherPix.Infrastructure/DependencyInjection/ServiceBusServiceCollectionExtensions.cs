@@ -12,7 +12,7 @@ namespace WeatherPix.Infrastructure.DependencyInjection;
 public static class ServiceBusServiceCollectionExtensions
 {
     public static IServiceCollection AddServiceBus(
-        this IServiceCollection services, 
+        this IServiceCollection services,
         IConfiguration cfg)
     {
         services
@@ -27,7 +27,7 @@ public static class ServiceBusServiceCollectionExtensions
                 .Value;
 
             return new ServiceBusClient(
-                options.FullyQualifiedNamespace, 
+                options.FullyQualifiedNamespace,
                 new DefaultAzureCredential());
 
         });

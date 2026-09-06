@@ -9,7 +9,7 @@ namespace WeatherPix.Infrastructure.Storage;
 
 public class JobStatusRepository(TableServiceClient tableServiceClient, IOptions<StorageOptions> options) : IJobStatusRepository
 {
-    private readonly TableClient _tableClient = 
+    private readonly TableClient _tableClient =
         tableServiceClient.GetTableClient(options.Value.JobStatusTableName);
 
     private const string JobRowKey = "JOB";

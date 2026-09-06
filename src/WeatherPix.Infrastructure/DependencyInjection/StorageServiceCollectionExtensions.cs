@@ -12,7 +12,7 @@ namespace WeatherPix.Infrastructure.DependencyInjection;
 public static class StorageServiceCollectionExtensions
 {
     public static IServiceCollection AddStorage(
-        this IServiceCollection services, 
+        this IServiceCollection services,
         IConfiguration cfg)
     {
         services
@@ -27,7 +27,7 @@ public static class StorageServiceCollectionExtensions
             .Value;
 
             return new TableServiceClient(
-                new Uri(options.TableServiceUri), 
+                new Uri(options.TableServiceUri),
                 new DefaultAzureCredential());
         });
 
