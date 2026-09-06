@@ -1,23 +1,44 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging;
+using Microsoft.Azure.Functions.Worker.Http;
+using System.Net;
+using WeatherPix.Application.Abstractions;
+using WeatherPix.Functions.Jobs.Contracts;
 
-namespace WeatherPix.Functions.Functions;
+namespace WeatherPix.Functions.Jobs;
 
-public class CreateJobFunction
+public class CreateJobFunction(IQueueJobHandler queueJobHandler)
 {
-    private readonly ILogger<CreateJobFunction> _logger;
+    private readonly IQueueJobHandler _queueJobHandler = queueJobHandler;
 
-    public CreateJobFunction(ILogger<CreateJobFunction> logger)
-    {
-        _logger = logger;
-    }
 
     [Function("CreateJobFunction")]
-    public IActionResult Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequest req)
+    public async Task<HttpResponseData> Run(
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "jobs")]
+        HttpRequestData req, CancellationToken ct)
     {
-        _logger.LogInformation("C# HTTP trigger function processed a request.");
-        return new OkObjectResult("Welcome to Azure Functions!");
+        var result = await _queueJobHandler.QueueJobAsync(ct);
+
+        if (!result.IsSuccess)
+        {
+
+            var errorResponse = req.CreateResponse(HttpStatusCode.InternalServerError);
+            await errorResponse.WriteAsJsonAsync(
+                new ErrorResponse(
+                    result.Error!.Code,
+                    result.Error.Message
+                ),
+                ct
+            );
+
+            return errorResponse;
+        }
+
+        var response = req.CreateResponse(HttpStatusCode.Accepted);
+        await response.WriteAsJsonAsync(
+            new QueuedJobResponse(result.Value),
+            ct
+        );
+
+        return response;
     }
 }
