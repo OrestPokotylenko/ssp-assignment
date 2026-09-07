@@ -4,5 +4,6 @@ namespace WeatherPix.Application.Abstractions;
 
 public interface IQueueJobHandler
 {
-    Task<Result<Guid>> QueueJobAsync(CancellationToken ct);
+    Task<Result<Guid>> QueueJobAsync(
+        CancellationToken ct);
 }

@@ -23,7 +23,9 @@ public class StartJobHandler(
 
     private readonly ILogger<StartJobHandler> _logger = logger;
 
-    public async Task<Result> HandleAsync(Guid operationId, CancellationToken ct)
+    public async Task<Result> HandleAsync(
+        Guid operationId,
+        CancellationToken ct)
     {
         try
         {

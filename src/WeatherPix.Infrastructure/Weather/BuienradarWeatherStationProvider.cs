@@ -5,11 +5,14 @@ using WeatherPix.Infrastructure.Weather.Contracts;
 
 namespace WeatherPix.Infrastructure.Weather;
 
-public class BuienradarWeatherStationProvider(HttpClient httpClient) : IWeatherStationProvider
+public class BuienradarWeatherStationProvider(
+    HttpClient httpClient)
+    : IWeatherStationProvider
 {
     private readonly HttpClient _httpClient = httpClient;
 
-    public async Task<IReadOnlyCollection<WeatherStation>> GetStationsAsync(CancellationToken ct)
+    public async Task<IReadOnlyCollection<WeatherStation>> GetStationsAsync(
+        CancellationToken ct)
     {
         var response = await _httpClient
             .GetFromJsonAsync<BuienradarResponse>("", ct);

@@ -2,7 +2,9 @@
 
 public class Result
 {
-    protected Result(bool isSuccess, Error? error)
+    protected Result(
+        bool isSuccess,
+        Error? error)
     {
         IsSuccess = isSuccess;
         Error = error;

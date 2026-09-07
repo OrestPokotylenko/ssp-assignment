@@ -9,7 +9,9 @@ namespace WeatherPix.Infrastructure.DependencyInjection;
 
 public static class BuienradarServiceCollectionExtensions
 {
-    public static IServiceCollection AddBuienradar(this IServiceCollection services, IConfiguration cfg)
+    public static IServiceCollection AddBuienradar(
+        this IServiceCollection services,
+        IConfiguration cfg)
     {
         services
             .AddOptions<BuienradarOptions>()

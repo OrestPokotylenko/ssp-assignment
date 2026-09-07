@@ -16,7 +16,8 @@ public class StartJobFunction(
 
     [Function(nameof(StartJobFunction))]
     public async Task Run(
-        [ServiceBusTrigger("%ServiceBus:StartJobsQueueName%", Connection = "ServiceBus")]
+        [ServiceBusTrigger("%ServiceBus:StartJobsQueueName%",
+        Connection = "ServiceBus")]
         ServiceBusReceivedMessage message,
         ServiceBusMessageActions messageActions,
         CancellationToken ct)

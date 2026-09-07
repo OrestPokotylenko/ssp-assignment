@@ -8,7 +8,8 @@ namespace WeatherPix.Infrastructure.Queue;
 
 public class ServiceBusMessagePublisher(
     ServiceBusClient client,
-    IOptions<ServiceBusOptions> options) : IMessagePublisher
+    IOptions<ServiceBusOptions> options)
+    : IMessagePublisher
 {
     private readonly ServiceBusClient _client = client;
     private readonly ServiceBusOptions _options = options.Value;
@@ -72,7 +73,8 @@ public class ServiceBusMessagePublisher(
         batch.Dispose();
     }
 
-    private static ServiceBusMessage CreateMessage<T>(T payload)
+    private static ServiceBusMessage CreateMessage<T>(
+        T payload)
         where T : IMessage
     {
         return new ServiceBusMessage(
