@@ -18,6 +18,7 @@ public static class StorageServiceCollectionExtensions
         services
             .AddOptions<StorageOptions>()
             .Bind(cfg.GetSection(StorageOptions.SectionName))
+            .ValidateDataAnnotations()
             .ValidateOnStart();
 
         services.AddSingleton(sp =>
