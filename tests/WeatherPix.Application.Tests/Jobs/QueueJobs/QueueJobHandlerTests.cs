@@ -1,27 +1,28 @@
 ﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
 using WeatherPix.Application.Abstractions;
-using WeatherPix.Application.Jobs;
-using WeatherPix.Domain.Jobs;
+using WeatherPix.Application.Jobs.QueueJob;
+using WeatherPix.Application.Messaging;
+using WeatherPix.Domain.Job;
 using Xunit;
 
-namespace WeatherPix.Application.Tests.Jobs;
+namespace WeatherPix.Application.Tests.Jobs.QueueJobs;
 
 public class QueueJobHandlerTests
 {
-    private readonly IJobQueuePublisher _queuePublisher;
+    private readonly IMessagePublisher _messagePublisher;
     private readonly IJobStatusRepository _jobStatusRepository;
     private readonly ILogger<QueueJobHandler> _logger;
     private readonly QueueJobHandler _handler;
 
     public QueueJobHandlerTests()
     {
-        _queuePublisher = Substitute.For<IJobQueuePublisher>();
+        _messagePublisher = Substitute.For<IMessagePublisher>();
         _jobStatusRepository = Substitute.For<IJobStatusRepository>();
         _logger = Substitute.For<ILogger<QueueJobHandler>>();
 
         _handler = new QueueJobHandler(
-            _queuePublisher,
+            _messagePublisher,
             _jobStatusRepository,
             _logger);
     }
@@ -42,9 +43,10 @@ public class QueueJobHandlerTests
                 Arg.Is<Job>(job => job.OperationId == result.Value),
                 Arg.Any<CancellationToken>());
 
-        await _queuePublisher.Received(1)
-            .PublishJobAsync(
-                Arg.Is<Job>(job => job.OperationId == result.Value),
+        await _messagePublisher.Received(1)
+            .PublishAsync(
+                Arg.Is<StartJobMessage>(
+                    message => message.OperationId == result.Value),
                 Arg.Any<CancellationToken>());
     }
 
@@ -66,9 +68,9 @@ public class QueueJobHandlerTests
         Assert.True(result.IsFailure);
         Assert.Equal(JobErrors.CreationFailed.Code, result.Error!.Code);
 
-        await _queuePublisher.DidNotReceive()
-            .PublishJobAsync(
-                Arg.Any<Job>(),
+        await _messagePublisher.DidNotReceive()
+            .PublishAsync(
+                Arg.Any<StartJobMessage>(),
                 Arg.Any<CancellationToken>());
     }
 
@@ -76,9 +78,9 @@ public class QueueJobHandlerTests
     public async Task QueueJobAsync_WhenQueuePublishFails_MarksJobFailedAndReturnsQueueFailed()
     {
         // Arrange
-        _queuePublisher
-            .PublishJobAsync(
-                Arg.Any<Job>(),
+        _messagePublisher
+            .PublishAsync(
+                Arg.Any<StartJobMessage>(),
                 Arg.Any<CancellationToken>())
             .Returns(Task.FromException(
                 new Exception("Service Bus failed")));
@@ -91,8 +93,9 @@ public class QueueJobHandlerTests
         Assert.Equal(JobErrors.QueueFailed.Code, result.Error!.Code);
 
         await _jobStatusRepository.Received(1)
-            .MarkFailedAsync(
+            .UpdateStatusAsync(
                 Arg.Any<Guid>(),
+                JobStatus.Failed,
                 Arg.Any<CancellationToken>());
     }
 
@@ -100,16 +103,17 @@ public class QueueJobHandlerTests
     public async Task QueueJobAsync_WhenMarkFailedAlsoFails_StillReturnsQueueFailed()
     {
         // Arrange
-        _queuePublisher
-            .PublishJobAsync(
-                Arg.Any<Job>(),
+        _messagePublisher
+            .PublishAsync(
+                Arg.Any<StartJobMessage>(),
                 Arg.Any<CancellationToken>())
             .Returns(Task.FromException(
                 new Exception("Service Bus failed")));
 
         _jobStatusRepository
-            .MarkFailedAsync(
+            .UpdateStatusAsync(
                 Arg.Any<Guid>(),
+                JobStatus.Failed,
                 Arg.Any<CancellationToken>())
             .Returns(Task.FromException(
                 new Exception("Table Storage update failed")));
@@ -122,8 +126,9 @@ public class QueueJobHandlerTests
         Assert.Equal(JobErrors.QueueFailed.Code, result.Error!.Code);
 
         await _jobStatusRepository.Received(1)
-            .MarkFailedAsync(
+            .UpdateStatusAsync(
                 Arg.Any<Guid>(),
+                JobStatus.Failed,
                 Arg.Any<CancellationToken>());
     }
 }

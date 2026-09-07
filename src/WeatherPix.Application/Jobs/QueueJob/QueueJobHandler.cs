@@ -1,16 +1,17 @@
 ﻿using Microsoft.Extensions.Logging;
 using WeatherPix.Application.Abstractions;
 using WeatherPix.Application.Common.Results;
-using WeatherPix.Domain.Jobs;
+using WeatherPix.Application.Messaging;
+using WeatherPix.Domain.Job;
 
-namespace WeatherPix.Application.Jobs;
+namespace WeatherPix.Application.Jobs.QueueJob;
 
 public class QueueJobHandler(
-    IJobQueuePublisher queuePublisher,
+    IMessagePublisher messagePublisher,
     IJobStatusRepository jobStatusRepository,
     ILogger<QueueJobHandler> logger) : IQueueJobHandler
 {
-    private readonly IJobQueuePublisher _queuePublisher = queuePublisher;
+    private readonly IMessagePublisher _messagePublisher = messagePublisher;
     private readonly IJobStatusRepository _jobStatusRepository = jobStatusRepository;
 
     private readonly ILogger<QueueJobHandler> _logger = logger;
@@ -36,7 +37,8 @@ public class QueueJobHandler(
 
         try
         {
-            await _queuePublisher.PublishJobAsync(job, ct);
+            var message = new StartJobMessage(job.OperationId);
+            await _messagePublisher.PublishAsync(message, ct);
         }
         catch (Exception ex)
         {
@@ -47,8 +49,9 @@ public class QueueJobHandler(
 
             try
             {
-                await _jobStatusRepository.MarkFailedAsync(
+                await _jobStatusRepository.UpdateStatusAsync(
                     job.OperationId,
+                    JobStatus.Failed,
                     ct);
             }
             catch (Exception statusUpdateException)

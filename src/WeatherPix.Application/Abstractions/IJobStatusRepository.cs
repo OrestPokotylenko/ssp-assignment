@@ -1,9 +1,9 @@
-﻿using WeatherPix.Domain.Jobs;
+﻿using WeatherPix.Domain.Job;
 
 namespace WeatherPix.Application.Abstractions;
 
 public interface IJobStatusRepository
 {
     Task CreateJobAsync(Job job, CancellationToken ct);
-    Task MarkFailedAsync(Guid operationId, CancellationToken ct);
+    Task UpdateStatusAsync(Guid operationId, JobStatus status, CancellationToken ct);
 }

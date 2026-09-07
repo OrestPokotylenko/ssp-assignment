@@ -1,8 +1,8 @@
-﻿namespace WeatherPix.Domain.Jobs;
+﻿namespace WeatherPix.Domain.Job;
 
 public enum JobStatus
 {
-    Queued,
+    Queued = 1,
     Processing,
     Succeeded,
     Failed

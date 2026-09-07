@@ -1,6 +1,6 @@
 ﻿using WeatherPix.Application.Common.Results;
 
-namespace WeatherPix.Application.Jobs;
+namespace WeatherPix.Application.Jobs.QueueJob;
 
 public static class JobErrors
 {

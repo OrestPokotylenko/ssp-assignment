@@ -1,7 +1,7 @@
 ﻿using Azure.Data.Tables;
 using Microsoft.Extensions.Options;
 using WeatherPix.Application.Abstractions;
-using WeatherPix.Domain.Jobs;
+using WeatherPix.Domain.Job;
 using WeatherPix.Infrastructure.Options.Table;
 using WeatherPix.Infrastructure.Storage.Entities;
 
@@ -27,8 +27,9 @@ public class JobStatusRepository(TableServiceClient tableServiceClient, IOptions
         await _tableClient.AddEntityAsync(entity, ct);
     }
 
-    public async Task MarkFailedAsync(
+    public async Task UpdateStatusAsync(
         Guid operationId,
+        JobStatus jobStatus,
         CancellationToken ct)
     {
         var entity = await _tableClient.GetEntityAsync<JobEntity>(
@@ -36,7 +37,7 @@ public class JobStatusRepository(TableServiceClient tableServiceClient, IOptions
             JobRowKey,
             cancellationToken: ct);
 
-        entity.Value.Status = JobStatus.Failed.ToString();
+        entity.Value.Status = jobStatus.ToString();
 
         await _tableClient.UpdateEntityAsync(
             entity.Value,

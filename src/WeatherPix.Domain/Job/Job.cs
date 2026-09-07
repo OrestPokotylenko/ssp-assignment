@@ -1,4 +1,4 @@
-﻿namespace WeatherPix.Domain.Jobs;
+﻿namespace WeatherPix.Domain.Job;
 
 public record Job
 {

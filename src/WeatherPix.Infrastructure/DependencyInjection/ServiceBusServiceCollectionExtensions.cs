@@ -18,6 +18,7 @@ public static class ServiceBusServiceCollectionExtensions
         services
             .AddOptions<ServiceBusOptions>()
             .Bind(cfg.GetSection(ServiceBusOptions.SectionName))
+            .ValidateDataAnnotations()
             .ValidateOnStart();
 
         services.AddSingleton(sp =>
@@ -32,7 +33,7 @@ public static class ServiceBusServiceCollectionExtensions
 
         });
 
-        services.AddSingleton<IJobQueuePublisher, JobQueuePublisher>();
+        services.AddSingleton<IMessagePublisher, ServiceBusMessagePublisher>();
 
         return services;
     }

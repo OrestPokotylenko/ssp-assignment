@@ -1,14 +1,23 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using WeatherPix.Application.Abstractions;
-using WeatherPix.Application.Jobs;
+using WeatherPix.Application.Jobs.QueueJob;
+using WeatherPix.Application.Jobs.StartJob;
+using WeatherPix.Application.Options.WeatherStation;
 
 namespace WeatherPix.Application.DependencyInjection;
 
 public static class ApplicationServiceCollectionExtensions
 {
-    public static IServiceCollection AddApplication(this IServiceCollection services)
+    public static IServiceCollection AddApplication(this IServiceCollection services, IConfiguration cfg)
     {
+        services.AddOptions<WeatherStationOptions>()
+            .Bind(cfg.GetSection(WeatherStationOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.AddScoped<IQueueJobHandler, QueueJobHandler>();
+        services.AddScoped<IStartJobHandler, StartJobHandler>();
 
         return services;
     }

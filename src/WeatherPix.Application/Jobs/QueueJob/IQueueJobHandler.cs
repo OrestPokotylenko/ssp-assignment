@@ -1,5 +1,4 @@
 ﻿using WeatherPix.Application.Common.Results;
-using WeatherPix.Domain.Jobs;
 
 namespace WeatherPix.Application.Abstractions;
 
