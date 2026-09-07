@@ -1,23 +1,58 @@
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
+using System.Net;
+using WeatherPix.Application.Jobs.GetStatus;
+using WeatherPix.Functions.Jobs.Contracts;
 
-namespace WeatherPix.Functions.Functions;
+namespace WeatherPix.Functions.Jobs;
 
-public class GetJobStatusFunction
+public class GetJobStatusFunction(
+    IGetJobStatusHandler handler,
+    ILogger<GetJobStatusFunction> logger)
 {
-    private readonly ILogger<GetJobStatusFunction> _logger;
+    private readonly IGetJobStatusHandler _handler = handler;
+    private readonly ILogger<GetJobStatusFunction> _logger = logger;
 
-    public GetJobStatusFunction(ILogger<GetJobStatusFunction> logger)
-    {
-        _logger = logger;
-    }
 
     [Function("GetJobStatusFunction")]
-    public IActionResult Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequest req)
+    public async Task<HttpResponseData> Run(
+        [HttpTrigger(AuthorizationLevel.Anonymous,
+        "get",
+        Route = "jobs/{operationId:guid}/status")]
+        HttpRequestData req,
+        Guid operationId,
+        CancellationToken ct)
     {
-        _logger.LogInformation("C# HTTP trigger function processed a request.");
-        return new OkObjectResult("Welcome to Azure Functions!");
+        var result = await _handler.HandleAsync(
+            operationId,
+            ct);
+
+        if (result.IsFailure)
+        {
+            var response = req.CreateResponse(
+                HttpStatusCode.InternalServerError);
+
+            return response;
+        }
+
+        if (result.Value is null)
+        {
+            return req.CreateResponse(
+                HttpStatusCode.NotFound);
+        }
+
+        var okResponse = req.CreateResponse(
+            HttpStatusCode.OK);
+
+        await okResponse.WriteAsJsonAsync(
+            new JobStatusResponse(
+                result.Value.OperationId,
+                result.Value.Status,
+                result.Value.CreatedAt),
+            ct);
+
+        return okResponse;
     }
 }

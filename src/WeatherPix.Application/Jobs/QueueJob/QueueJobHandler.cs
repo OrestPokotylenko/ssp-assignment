@@ -16,7 +16,8 @@ public class QueueJobHandler(
 
     private readonly ILogger<QueueJobHandler> _logger = logger;
 
-    public async Task<Result<Guid>> QueueJobAsync(CancellationToken ct)
+    public async Task<Result<Guid>> QueueJobAsync(
+        CancellationToken ct)
     {
         Job job = new();
 

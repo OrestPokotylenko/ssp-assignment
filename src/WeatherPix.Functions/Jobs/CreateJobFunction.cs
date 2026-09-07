@@ -13,8 +13,11 @@ public class CreateJobFunction(IQueueJobHandler queueJobHandler)
 
     [Function("CreateJobFunction")]
     public async Task<HttpResponseData> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "jobs")]
-        HttpRequestData req, CancellationToken ct)
+        [HttpTrigger(AuthorizationLevel.Anonymous,
+        "post",
+        Route = "jobs")]
+        HttpRequestData req,
+        CancellationToken ct)
     {
         var result = await _queueJobHandler.QueueJobAsync(ct);
 
