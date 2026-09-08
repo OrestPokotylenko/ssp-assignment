@@ -8,7 +8,7 @@ namespace WeatherPix.Infrastructure.Storage;
 
 public class BlobImageStorage(
     BlobServiceClient blobServiceClient,
-    IOptions<StorageOptions> options) 
+    IOptions<StorageOptions> options)
     : IImageStorage
 {
     private readonly BlobContainerClient _containerClient =
