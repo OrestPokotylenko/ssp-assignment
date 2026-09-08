@@ -2,6 +2,9 @@ name: Reusable - CodeQL Validation
 
 on:
   workflow_call:
+    secrets:
+      SIXLABORS_LICENSE_KEY:
+        required: true
 
 permissions:
   contents: read
@@ -15,9 +18,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
+    env:
+      SIXLABORS_LICENSE_KEY: ${{ secrets.SIXLABORS_LICENSE_KEY }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      - name: Validate Six Labors license
+        shell: bash
+        run: |
+          if [ -z "$SIXLABORS_LICENSE_KEY" ]; then
+            echo "SIXLABORS_LICENSE_KEY is missing."
+            exit 1
+          fi
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4

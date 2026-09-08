@@ -24,6 +24,7 @@ jobs:
     uses: ./.github/workflows/reusable-dotnet-validation.yml
     with:
       solution: WeatherPix.slnx
+    secrets: inherit
 
   security:
     name: Security Validation
@@ -43,6 +44,7 @@ jobs:
       packages: read
       security-events: write
     uses: ./.github/workflows/reusable-codeql-validation.yml
+    secrets: inherit
 
   deploy:
     name: Deploy DEV
