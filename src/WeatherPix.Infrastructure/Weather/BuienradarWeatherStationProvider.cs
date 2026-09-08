@@ -28,18 +28,19 @@ public class BuienradarWeatherStationProvider(
     {
         return new WeatherStation(
             station.StationId,
-            station.StationName ?? "Unknown",
-            station.Region ?? "Unknown",
+            station.StationName,
             station.Latitude,
             station.Longitude,
-            station.Temperature ?? 0,
-            station.Humidity ?? 0,
-            station.WindDirection ?? "Unknown",
-            station.WindSpeed ?? 0,
-            station.WindGusts ?? 0,
-            station.AirPressure ?? 0,
-            station.Visibility ?? 0,
-            station.Precipitation ?? 0,
-            station.Timestamp);
+            station.Region,
+            station.Timestamp,
+            station.WindDirection,
+            station.WeatherDescription,
+            station.AirPressure,
+            station.Temperature,
+            station.FeelTemperature,
+            station.Visibility,
+            station.WindGusts,
+            station.WindSpeed,
+            station.Humidity);
     }
 }

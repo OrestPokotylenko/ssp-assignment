@@ -257,22 +257,26 @@ public class StartJobHandlerTests
     private static IReadOnlyCollection<WeatherStation> CreateStations(
         int count)
     {
-        return [.. Enumerable.Range(1, count)
+        return
+        [
+            .. Enumerable.Range(1, count)
             .Select(i => new WeatherStation(
                 i,
                 $"Station {i}",
-                $"Region {i}",
                 52.0 + i,
                 5.0 + i,
-                15,
-                70,
+                $"Region {i}",
+                DateTimeOffset.UtcNow,
                 "ZO",
-                3,
-                5,
+                "Cloudy",
                 1015,
+                15,
+                14,
                 10000,
-                0,
-                DateTimeOffset.UtcNow))];
+                5,
+                3,
+                70))
+        ];
     }
 
     [Fact]
@@ -282,18 +286,19 @@ public class StartJobHandlerTests
         var station = new WeatherStation(
             123,
             "De Bilt",
-            "Utrecht",
             52.1,
             5.18,
-            15.7,
-            81,
+            "Utrecht",
+            DateTimeOffset.UtcNow,
             "ZZO",
-            2.0,
-            3.6,
+            "Cloudy",
             1016.8,
+            15.7,
+            15.0,
             48900,
-            0,
-            DateTimeOffset.UtcNow);
+            3.6,
+            2.0,
+            81);
 
         _weatherStationProvider
             .GetStationsAsync(Arg.Any<CancellationToken>())

@@ -12,6 +12,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddServiceBus(cfg);
         services.AddStorage(cfg);
         services.AddBuienradar(cfg);
+        services.AddPexels(cfg);
 
         return services;
     }

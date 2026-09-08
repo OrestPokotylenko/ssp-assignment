@@ -2,17 +2,18 @@
 
 public sealed record WeatherStation(
     int StationId,
-    string Name,
-    string Region,
-    double Latitude,
-    double Longitude,
-    double TemperatureCelsius,
-    double HumidityPercentage,
-    string WindDirection,
-    double WindSpeedMetersPerSecond,
-    double WindGustMetersPerSecond,
-    double AirPressureHpa,
-    double VisibilityMeters,
-    double PrecipitationMillimeters,
-    DateTimeOffset MeasuredAt
+    string? Name,
+    double? Latitude,
+    double? Longitude,
+    string? Region,
+    DateTimeOffset MeasuredAt,
+    string? WindDirection,
+    string? WeatherDescription,
+    double? AirPressure,
+    double? TemperatureCelsius,
+    double? FeelTemperatureCelsius,
+    double? VisibilityMeters,
+    double? WindGustMetersPerSecond,
+    double? WindSpeedMetersPerSecond,
+    double? HumidityPercentage
 );

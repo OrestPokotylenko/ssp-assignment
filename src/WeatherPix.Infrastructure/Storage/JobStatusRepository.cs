@@ -3,7 +3,7 @@ using Azure.Data.Tables;
 using Microsoft.Extensions.Options;
 using WeatherPix.Application.Abstractions;
 using WeatherPix.Domain.Job;
-using WeatherPix.Infrastructure.Options.Table;
+using WeatherPix.Infrastructure.Options.Storage;
 using WeatherPix.Infrastructure.Storage.Entities;
 
 namespace WeatherPix.Infrastructure.Storage;
@@ -49,6 +49,76 @@ public class JobStatusRepository(
             entity.Value,
             entity.Value.ETag,
             TableUpdateMode.Replace,
+            ct);
+    }
+
+    public async Task CreateStationJobsAsync(
+        Guid operationId,
+        IReadOnlyCollection<int> stationIds,
+        CancellationToken ct)
+    {
+        var partitionKey = operationId.ToString();
+
+        var actions = stationIds
+            .Select(stationId =>
+                new TableTransactionAction(
+                    TableTransactionActionType.Add,
+                    new StationJobEntity
+                    {
+                        PartitionKey = partitionKey,
+                        RowKey = $"STATION-{stationId}",
+                        StationId = stationId,
+                        Status = JobStatus.Queued.ToString()
+                    }))
+            .ToList();
+
+        await _tableClient.SubmitTransactionAsync(actions, ct);
+    }
+
+    public async Task<JobProgress> GetProgressAsync(
+        Guid operationId,
+        CancellationToken ct)
+    {
+        var partitionKey = operationId.ToString();
+
+        var entities = new List<StationJobEntity>();
+
+        await foreach (var entity in _tableClient.QueryAsync<StationJobEntity>(
+            x =>
+                x.PartitionKey == partitionKey &&
+                x.RowKey.CompareTo("STATION-") >= 0,
+            cancellationToken: ct))
+        {
+            entities.Add(entity);
+        }
+
+        return new JobProgress(
+            Total: entities.Count,
+            Succeeded: entities.Count(x =>
+                x.Status == JobStatus.Succeeded.ToString()),
+            Failed: entities.Count(x =>
+                x.Status == JobStatus.Failed.ToString()));
+    }
+
+    public async Task UpdateStationStatusAsync(
+        Guid operationId,
+        int stationId,
+        JobStatus status,
+        CancellationToken ct)
+    {
+        var entity = new StationJobEntity
+        {
+            PartitionKey = operationId.ToString(),
+            RowKey = $"STATION-{stationId}",
+            StationId = stationId,
+            Status = status.ToString(),
+            ETag = ETag.All
+        };
+
+        await _tableClient.UpdateEntityAsync(
+            entity,
+            ETag.All,
+            TableUpdateMode.Merge,
             ct);
     }
 

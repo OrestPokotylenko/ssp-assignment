@@ -10,6 +10,10 @@ param location string = 'francecentral'
 param projectName string = 'weatherpix'
 param pexelsSecretName string = 'pexels-api-key'
 
+param weatherStationCount int = 50
+param buienradarBaseUrl string = 'https://data.buienradar.nl/2.0/feed/json'
+param pexelsBaseUrl string = 'https://api.pexels.com/'
+
 param deploymentPrincipalId string = ''
 
 @allowed([
@@ -115,6 +119,10 @@ module functionApp './modules/function-app.bicep' = {
 
     keyVaultUri: keyVault.outputs.uri
     pexelsSecretName: pexelsSecretName
+
+    weatherStationCount: weatherStationCount
+    buienradarBaseUrl: buienradarBaseUrl
+    pexelsBaseUrl: pexelsBaseUrl
 
     instanceMemoryMB: functionInstanceMemoryMB
     maximumInstanceCount: functionMaximumInstanceCount

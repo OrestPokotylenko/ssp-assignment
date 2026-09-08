@@ -24,6 +24,9 @@ jobs:
     environment:
       name: ${{ inputs.environment }}
 
+    env:
+      SIXLABORS_LICENSE_KEY: ${{ secrets.SIXLABORS_LICENSE_KEY }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -32,6 +35,14 @@ jobs:
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
+
+      - name: Validate Six Labors license
+        shell: bash
+        run: |
+          if [ -z "$SIXLABORS_LICENSE_KEY" ]; then
+            echo "SIXLABORS_LICENSE_KEY is missing."
+            exit 1
+          fi
 
       - name: Restore
         run: dotnet restore WeatherPix.slnx
@@ -100,6 +111,28 @@ jobs:
           if [ -z "$PEXELS_API_KEY" ]; then
             echo "PEXELS_API_KEY is missing."
             exit 1
+          fi
+
+          CURRENT_VALUE=""
+
+          for attempt in {1..6}; do
+            echo "Attempt $attempt to read current Pexels API key..."
+
+            if CURRENT_VALUE=$(az keyvault secret show \
+              --vault-name "$KEY_VAULT" \
+              --name "pexels-api-key" \
+              --query value \
+              --output tsv 2>/dev/null); then
+              break
+            fi
+
+            echo "Waiting for RBAC propagation..."
+            sleep 10
+          done
+
+          if [ "$CURRENT_VALUE" = "$PEXELS_API_KEY" ]; then
+            echo "Pexels API key is already up to date. Skipping."
+            exit 0
           fi
 
           for attempt in {1..6}; do
