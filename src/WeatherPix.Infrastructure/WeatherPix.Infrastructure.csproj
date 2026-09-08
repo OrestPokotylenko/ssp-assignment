@@ -24,4 +24,8 @@
 		<ProjectReference Include="..\WeatherPix.Domain\WeatherPix.Domain.csproj" />
 	</ItemGroup>
 
+	<PropertyGroup>
+		<SixLaborsLicenseKey>$(SIXLABORS_LICENSE_KEY)</SixLaborsLicenseKey>
+	</PropertyGroup>
+
 </Project>

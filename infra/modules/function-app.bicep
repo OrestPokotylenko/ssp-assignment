@@ -18,6 +18,10 @@ param jobStatusTableName string
 param keyVaultUri string
 param pexelsSecretName string
 
+param weatherStationCount int
+param buienradarBaseUrl string
+param pexelsBaseUrl string
+
 @allowed([
   512
   2048
@@ -99,8 +103,8 @@ resource appSettings 'Microsoft.Web/sites/config@2024-04-01' = {
     ServiceBus__fullyQualifiedNamespace: serviceBusFullyQualifiedNamespace
     ServiceBus__credential: 'managedidentity'
 
-    StartJobsQueueName: startJobsQueueName
-    ImageJobsQueueName: imageJobsQueueName
+    ServiceBus__StartJobsQueueName: startJobsQueueName
+    ServiceBus__ImageJobsQueueName: imageJobsQueueName
 
     Storage__BlobServiceUri: 'https://${storageAccountName}.blob.${environment().suffixes.storage}'
     Storage__TableServiceUri: 'https://${storageAccountName}.table.${environment().suffixes.storage}'
@@ -108,6 +112,11 @@ resource appSettings 'Microsoft.Web/sites/config@2024-04-01' = {
     Storage__GeneratedImagesContainerName: generatedImagesContainerName
     Storage__JobStatusTableName: jobStatusTableName
 
+    WeatherStation__Count: string(weatherStationCount)
+
+    Buienradar__BaseUrl: buienradarBaseUrl
+
+    Pexels__BaseUrl: pexelsBaseUrl
     Pexels__ApiKey: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/${pexelsSecretName}/)'
   }
 }

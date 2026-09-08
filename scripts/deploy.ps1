@@ -53,6 +53,7 @@ Assert-AzureLogin
 Write-Step "Checking deployment secrets"
 
 Assert-EnvironmentVariable "PEXELS_API_KEY"
+Assert-EnvironmentVariable "SIXLABORS_LICENSE_KEY"
 
 # --------------------------------------------------
 # Restore
@@ -171,21 +172,21 @@ else {
 # Store Pexels secret
 # --------------------------------------------------
 
-Write-Step "Storing Pexels API key in Key Vault"
+Write-Step "Checking Pexels API key in Key Vault"
 
-$SecretStored = $false
+$CurrentSecretValue = $null
 
 for ($Attempt = 1; $Attempt -le 6; $Attempt++) {
-    Write-Host "Attempt $Attempt of 6..."
+    Write-Host "Attempt $Attempt of 6 to read current secret..."
 
-    az keyvault secret set `
+    $CurrentSecretValue = az keyvault secret show `
         --vault-name $KeyVault `
         --name $PexelsSecretName `
-        --value $env:PEXELS_API_KEY `
-        --output none
+        --query value `
+        --output tsv `
+        2>$null
 
     if ($LASTEXITCODE -eq 0) {
-        $SecretStored = $true
         break
     }
 
@@ -195,8 +196,39 @@ for ($Attempt = 1; $Attempt -le 6; $Attempt++) {
     }
 }
 
-if (-not $SecretStored) {
-    throw "Failed to store Pexels API key in Key Vault."
+if ($CurrentSecretValue -eq $env:PEXELS_API_KEY) {
+    Write-Host "Pexels API key is already up to date. Skipping secret update."
+}
+else {
+    Write-Host "Pexels API key is missing or has changed. Updating secret..."
+
+    $SecretStored = $false
+
+    for ($Attempt = 1; $Attempt -le 6; $Attempt++) {
+        Write-Host "Attempt $Attempt of 6..."
+
+        az keyvault secret set `
+            --vault-name $KeyVault `
+            --name $PexelsSecretName `
+            --value $env:PEXELS_API_KEY `
+            --output none
+
+        if ($LASTEXITCODE -eq 0) {
+            $SecretStored = $true
+            break
+        }
+
+        if ($Attempt -lt 6) {
+            Write-Host "Waiting for RBAC propagation..."
+            Start-Sleep -Seconds 10
+        }
+    }
+
+    if (-not $SecretStored) {
+        throw "Failed to store Pexels API key in Key Vault."
+    }
+
+    Write-Host "Pexels API key updated successfully."
 }
 
 # --------------------------------------------------
