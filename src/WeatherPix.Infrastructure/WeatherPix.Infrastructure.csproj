@@ -9,10 +9,14 @@
 	<ItemGroup>
 		<PackageReference Include="Azure.Data.Tables" />
 		<PackageReference Include="Azure.Messaging.ServiceBus" />
+		<PackageReference Include="Azure.Storage.Blobs" />
 		<PackageReference Include="Microsoft.Extensions.Http" />
 		<PackageReference Include="Microsoft.Extensions.Options" />
 		<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
 		<PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" />
+		<PackageReference Include="SixLabors.Fonts" />
+		<PackageReference Include="SixLabors.ImageSharp" />
+		<PackageReference Include="SixLabors.ImageSharp.Drawing" />
 	</ItemGroup>
 
 	<ItemGroup>

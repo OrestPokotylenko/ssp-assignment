@@ -27,12 +27,64 @@ public class StartJobHandler(
         Guid operationId,
         CancellationToken ct)
     {
+        if (!await TryMarkProcessingAsync(operationId, ct))
+        {
+            return Result.Failure(JobErrors.StatusUpdateFailed);
+        }
+
+        var stationsResult = await TryGetStationsAsync(operationId, ct);
+
+        if (stationsResult.IsFailure || stationsResult.Value is null)
+        {
+            return Result.Failure(
+                stationsResult.Error ?? JobErrors.WeatherRetrievalFailed);
+        }
+
+        var selectedStations = stationsResult.Value
+            .Take(_options.Count)
+            .ToList();
+
+        var messages = CreateMessages(
+            operationId,
+            selectedStations);
+
+        if (!await TryCreateStationJobsAsync(
+                operationId,
+                selectedStations,
+                ct))
+        {
+            await TryMarkFailedAsync(operationId, ct);
+
+            return Result.Failure(
+                JobErrors.StatusUpdateFailed);
+        }
+
+        if (!await TryPublishMessagesAsync(
+                operationId,
+                messages,
+                ct))
+        {
+            await TryMarkFailedAsync(operationId, ct);
+
+            return Result.Failure(
+                JobErrors.ImageQueueFailed);
+        }
+
+        return Result.Success();
+    }
+
+    private async Task<bool> TryMarkProcessingAsync(
+    Guid operationId,
+    CancellationToken ct)
+    {
         try
         {
             await _jobStatusRepository.UpdateStatusAsync(
                 operationId,
                 JobStatus.Processing,
                 ct);
+
+            return true;
         }
         catch (Exception ex)
         {
@@ -41,14 +93,21 @@ public class StartJobHandler(
                 "Failed to mark job {OperationId} as processing",
                 operationId);
 
-            return Result.Failure(JobErrors.StatusUpdateFailed);
+            return false;
         }
+    }
 
-        IReadOnlyCollection<WeatherStation> stations;
-
+    private async Task<Result<IReadOnlyCollection<WeatherStation>>> TryGetStationsAsync(
+    Guid operationId,
+    CancellationToken ct)
+    {
         try
         {
-            stations = await _weatherStationProvider.GetStationsAsync(ct);
+            var stations =
+                await _weatherStationProvider.GetStationsAsync(ct);
+
+            return Result<IReadOnlyCollection<WeatherStation>>
+                .Success(stations);
         }
         catch (Exception ex)
         {
@@ -59,32 +118,75 @@ public class StartJobHandler(
 
             await TryMarkFailedAsync(operationId, ct);
 
-            return Result.Failure(JobErrors.WeatherRetrievalFailed);
+            return Result<IReadOnlyCollection<WeatherStation>>
+                .FailureWith(JobErrors.WeatherRetrievalFailed);
         }
+    }
 
-        var messages = stations
-            .Take(_options.Count)
-            .Select(station => new GenerateImageMessage(
+    private static IReadOnlyCollection<GenerateImageMessage> CreateMessages(
+    Guid operationId,
+    IReadOnlyCollection<WeatherStation> stations)
+    {
+        return
+        [
+            .. stations.Select(station =>
+            new GenerateImageMessage(
                 operationId,
                 station.StationId,
                 station.Name,
-                station.Region,
                 station.Latitude,
                 station.Longitude,
-                station.TemperatureCelsius,
-                station.HumidityPercentage,
+                station.Region,
+                station.MeasuredAt,
+                station.WeatherDescription,
                 station.WindDirection,
-                station.WindSpeedMetersPerSecond,
-                station.WindGustMetersPerSecond,
-                station.AirPressureHpa,
+                station.AirPressure,
+                station.TemperatureCelsius,
+                station.FeelTemperatureCelsius,
                 station.VisibilityMeters,
-                station.PrecipitationMillimeters,
-                station.MeasuredAt))
-            .ToList();
+                station.WindGustMetersPerSecond,
+                station.WindSpeedMetersPerSecond,
+                station.HumidityPercentage))
+        ];
+    }
 
+    private async Task<bool> TryCreateStationJobsAsync(
+    Guid operationId,
+    IReadOnlyCollection<WeatherStation> stations,
+    CancellationToken ct)
+    {
         try
         {
-            await _messagePublisher.PublishBatchAsync(messages, ct);
+            await _jobStatusRepository.CreateStationJobsAsync(
+                operationId,
+                [.. stations.Select(x => x.StationId)],
+                ct);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Failed to create station jobs for operation {OperationId}",
+                operationId);
+
+            return false;
+        }
+    }
+
+    private async Task<bool> TryPublishMessagesAsync(
+    Guid operationId,
+    IReadOnlyCollection<GenerateImageMessage> messages,
+    CancellationToken ct)
+    {
+        try
+        {
+            await _messagePublisher.PublishBatchAsync(
+                messages,
+                ct);
+
+            return true;
         }
         catch (Exception ex)
         {
@@ -93,12 +195,8 @@ public class StartJobHandler(
                 "Failed to publish image jobs for operation {OperationId}",
                 operationId);
 
-            await TryMarkFailedAsync(operationId, ct);
-
-            return Result.Failure(JobErrors.ImageQueueFailed);
+            return false;
         }
-
-        return Result.Success();
     }
 
     private async Task TryMarkFailedAsync(
