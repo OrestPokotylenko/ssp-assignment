@@ -1,5 +1,7 @@
 using '../main.bicep'
 
+param functionsEnvironment = 'Production'
+
 param environment = 'prod'
 param location = 'francecentral'
 

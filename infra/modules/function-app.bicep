@@ -4,6 +4,12 @@ param planName string
 param location string
 param tags object = {}
 
+@allowed([
+  'Staging'
+  'Production'
+])
+param functionsEnvironment string
+
 param storageAccountName string
 param storageBlobEndpoint string
 param deploymentContainerName string
@@ -106,6 +112,7 @@ resource appSettings 'Microsoft.Web/sites/config@2024-04-01' = {
   properties: {
     AzureWebJobsStorage__accountName: storageAccountName
     AzureWebJobsStorage__credential: 'managedidentity'
+    AZURE_FUNCTIONS_ENVIRONMENT: functionsEnvironment
 
     ServiceBus__fullyQualifiedNamespace: serviceBusFullyQualifiedNamespace
     ServiceBus__credential: 'managedidentity'
