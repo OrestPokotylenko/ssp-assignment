@@ -25,6 +25,10 @@ public class QueueJobHandler(
         {
             await _jobStatusRepository.CreateJobAsync(job, ct);
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(
@@ -41,6 +45,10 @@ public class QueueJobHandler(
             var message = new StartJobMessage(job.OperationId);
             await _messagePublisher.PublishAsync(message, ct);
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(
@@ -54,6 +62,10 @@ public class QueueJobHandler(
                     job.OperationId,
                     JobStatus.Failed,
                     ct);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
             }
             catch (Exception statusUpdateException)
             {

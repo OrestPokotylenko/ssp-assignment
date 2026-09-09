@@ -1,7 +1,7 @@
 ﻿using Microsoft.Azure.Functions.Worker.Http;
 using System.Net;
 
-namespace WeatherPix.Functions.Helpers;
+namespace WeatherPix.Functions.Helpers.OperationId;
 
 public static class OperationIdRequestParser
 {

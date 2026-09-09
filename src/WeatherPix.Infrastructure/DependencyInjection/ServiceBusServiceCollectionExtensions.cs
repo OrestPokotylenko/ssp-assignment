@@ -1,4 +1,4 @@
-﻿using Azure.Identity;
+﻿using Azure.Core;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,13 +23,28 @@ public static class ServiceBusServiceCollectionExtensions
 
         services.AddSingleton(sp =>
         {
+            var credential = sp.GetRequiredService<TokenCredential>();
+
             var options = sp
                 .GetRequiredService<IOptions<ServiceBusOptions>>()
                 .Value;
 
+            var serviceBusOptions = new ServiceBusClientOptions
+            {
+                RetryOptions =
+                {
+                    Mode = ServiceBusRetryMode.Exponential,
+                    MaxRetries = 3,
+                    Delay = TimeSpan.FromSeconds(1),
+                    MaxDelay = TimeSpan.FromSeconds(5),
+                    TryTimeout = TimeSpan.FromSeconds(10)
+                }
+            };
+
             return new ServiceBusClient(
                 options.FullyQualifiedNamespace,
-                new DefaultAzureCredential());
+                credential,
+                serviceBusOptions);
 
         });
 

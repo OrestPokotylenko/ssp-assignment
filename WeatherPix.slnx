@@ -1,4 +1,10 @@
 <Solution>
+  <Folder Name="/http/">
+    <File Path="http/http-client.env.json" />
+    <File Path="http/http-client.env.json.user" />
+    <File Path="http/http-client.env.json.user.example" />
+    <File Path="http/weatherpix.http" />
+  </Folder>
   <Folder Name="/Solution Items/">
     <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
@@ -11,5 +17,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/WeatherPix.Application.Tests/WeatherPix.Application.Tests.csproj" Id="395494a1-7c0f-49a1-93ae-cd68b78c24c7" />
+    <Project Path="tests/WeatherPix.Functions.Tests/WeatherPix.Functions.Tests.csproj" Id="0689cc60-13b1-4848-8373-9f39d51d104c" />
   </Folder>
 </Solution>

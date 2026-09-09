@@ -86,6 +86,10 @@ public class StartJobHandler(
 
             return true;
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(
@@ -108,6 +112,10 @@ public class StartJobHandler(
 
             return Result<IReadOnlyCollection<WeatherStation>>
                 .Success(stations);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -164,6 +172,10 @@ public class StartJobHandler(
 
             return true;
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(
@@ -188,6 +200,10 @@ public class StartJobHandler(
 
             return true;
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(
@@ -209,6 +225,10 @@ public class StartJobHandler(
                 operationId,
                 JobStatus.Failed,
                 ct);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
