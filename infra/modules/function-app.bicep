@@ -24,6 +24,11 @@ param weatherStationCount int
 param buienradarBaseUrl string
 param pexelsBaseUrl string
 
+param authDomain string
+param authAudience string
+param authReadPermission string
+param authCreatePermission string
+
 @allowed([
   512
   2048
@@ -123,6 +128,11 @@ resource appSettings 'Microsoft.Web/sites/config@2024-04-01' = {
 
     Pexels__BaseUrl: pexelsBaseUrl
     Pexels__ApiKey: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/${pexelsSecretName}/)'
+
+    Auth__Domain: authDomain
+    Auth__Audience: authAudience
+    Auth__ReadPermission: authReadPermission
+    Auth__CreatePermission: authCreatePermission
   }
 }
 

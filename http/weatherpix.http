@@ -1,0 +1,49 @@
+@baseUrl = http://localhost:7278/api
+
+### Get Auth0 token
+# @name auth
+
+POST https://{{auth0Domain}}/oauth/token
+Content-Type: application/json
+
+{
+  "client_id": "{{clientId}}",
+  "client_secret": "{{clientSecret}}",
+  "audience": "{{audience}}",
+  "grant_type": "client_credentials"
+}
+
+###
+
+### Create job
+# @name createJob
+
+POST {{baseUrl}}/jobs
+Authorization: Bearer {{auth.response.body.$.access_token}}
+
+###
+
+### Get job status
+
+GET {{baseUrl}}/jobs/{{createJob.response.body.$.operationId}}/status
+Authorization: Bearer {{auth.response.body.$.access_token}}
+
+###
+
+### Get job results
+
+GET {{baseUrl}}/jobs/{{createJob.response.body.$.operationId}}/results
+Authorization: Bearer {{auth.response.body.$.access_token}}
+
+###
+
+### Invalid operation id
+
+GET {{baseUrl}}/jobs/not-a-guid
+Authorization: Bearer {{auth.response.body.$.access_token}}
+
+###
+
+### Unauthorized
+
+GET {{baseUrl}}/jobs/{{createJob.response.body.$.operationId}}/status

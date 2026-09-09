@@ -17,6 +17,11 @@ param weatherStationCount int = 50
 param buienradarBaseUrl string = 'https://data.buienradar.nl/2.0/feed/json'
 param pexelsBaseUrl string = 'https://api.pexels.com/'
 
+param authDomain string = 'dev-8rkdghl0g37kgzzx.us.auth0.com'
+param authAudience string = 'api://weatherpix'
+param authReadPermission string = 'jobs:read'
+param authCreatePermission string = 'jobs:create'
+
 param deploymentPrincipalId string = ''
 
 @allowed([
@@ -128,6 +133,11 @@ module functionApp './modules/function-app.bicep' = {
     weatherStationCount: weatherStationCount
     buienradarBaseUrl: buienradarBaseUrl
     pexelsBaseUrl: pexelsBaseUrl
+
+    authDomain: authDomain
+    authAudience: authAudience
+    authReadPermission: authReadPermission
+    authCreatePermission: authCreatePermission
 
     instanceMemoryMB: functionInstanceMemoryMB
     maximumInstanceCount: functionMaximumInstanceCount

@@ -37,6 +37,10 @@ public class GetJobStatusHandler(
                     job,
                     progress));
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(

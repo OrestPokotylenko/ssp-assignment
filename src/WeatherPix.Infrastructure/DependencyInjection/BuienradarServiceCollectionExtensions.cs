@@ -25,6 +25,13 @@ public static class BuienradarServiceCollectionExtensions
                 sp.GetRequiredService<IOptions<BuienradarOptions>>().Value;
 
             client.BaseAddress = new Uri(options.BaseUrl);
+        })
+        .AddStandardResilienceHandler(options =>
+        {
+            options.Retry.MaxRetryAttempts = 3;
+            options.Retry.Delay = TimeSpan.FromSeconds(1);
+            options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
+            options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
         });
 
         return services;

@@ -31,7 +31,14 @@ public static class ImagesServiceCollectionExtensions
 
                 client.DefaultRequestHeaders.Authorization =
                     new AuthenticationHeaderValue(options.ApiKey);
-            });
+            })
+            .AddStandardResilienceHandler(options =>
+            {
+                options.Retry.MaxRetryAttempts = 3;
+                options.Retry.Delay = TimeSpan.FromSeconds(1);
+                options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(10);
+                options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(30);
+            }); ;
 
         services.AddSingleton<IWeatherImageRenderer, ImageSharpWeatherImageRenderer>();
 

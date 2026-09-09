@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using WeatherPix.Application.DependencyInjection;
+using WeatherPix.Functions.DependencyInjection;
 using WeatherPix.Infrastructure.DependencyInjection;
 
 var builder = FunctionsApplication.CreateBuilder(args);
@@ -17,8 +18,11 @@ builder.Services.Configure<JsonSerializerOptions>(options =>
         JsonNamingPolicy.CamelCase));
 });
 
+var cfg = builder.Configuration;
+
 builder.Services
-    .AddApplication(builder.Configuration)
-    .AddInfrastructure(builder.Configuration);
+    .AddApplication(cfg)
+    .AddInfrastructure(cfg, builder.Environment)
+    .AddAuth(cfg);
 
 builder.Build().Run();

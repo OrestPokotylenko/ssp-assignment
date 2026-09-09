@@ -31,6 +31,10 @@ public class GetJobResultsHandler(
                     job.Status,
                     images));
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(

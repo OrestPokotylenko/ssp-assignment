@@ -1,4 +1,5 @@
-﻿using Azure.Data.Tables;
+﻿using Azure.Core;
+using Azure.Data.Tables;
 using Azure.Identity;
 using Azure.Storage.Blobs;
 using Microsoft.Extensions.Configuration;
@@ -24,26 +25,56 @@ public static class StorageServiceCollectionExtensions
 
         services.AddSingleton(sp =>
         {
+            var credential = sp.GetRequiredService<TokenCredential>();
+
             var options = sp
             .GetRequiredService<IOptions<StorageOptions>>()
             .Value;
 
+            var clientOptions = new TableClientOptions
+            {
+                Retry =
+                {
+                    Mode = RetryMode.Exponential,
+                    MaxRetries = 3,
+                    Delay = TimeSpan.FromSeconds(1),
+                    MaxDelay = TimeSpan.FromSeconds(5),
+                    NetworkTimeout = TimeSpan.FromSeconds(10)
+                }
+            };
+
             return new TableServiceClient(
                 new Uri(options.TableServiceUri),
-                new DefaultAzureCredential());
+                credential,
+                clientOptions);
         });
 
         services.AddSingleton<IJobStatusRepository, JobStatusRepository>();
 
         services.AddSingleton(sp =>
         {
+            var credential = sp.GetRequiredService<TokenCredential>();
+
             var options = sp
                 .GetRequiredService<IOptions<StorageOptions>>()
                 .Value;
 
+            var blobOptions = new BlobClientOptions
+            {
+                Retry =
+                {
+                    Mode = RetryMode.Exponential,
+                    MaxRetries = 3,
+                    Delay = TimeSpan.FromSeconds(1),
+                    MaxDelay = TimeSpan.FromSeconds(5),
+                    NetworkTimeout = TimeSpan.FromSeconds(15)
+                }
+            };
+
             return new BlobServiceClient(
                 new Uri(options.BlobServiceUri),
-                new DefaultAzureCredential());
+                credential,
+                blobOptions);
         });
 
         services.AddSingleton<IImageStorage, BlobImageStorage>();
