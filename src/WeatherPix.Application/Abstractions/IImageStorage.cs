@@ -1,4 +1,6 @@
-﻿namespace WeatherPix.Application.Abstractions;
+﻿using WeatherPix.Domain.Image;
+
+namespace WeatherPix.Application.Abstractions;
 
 public interface IImageStorage
 {
@@ -6,5 +8,9 @@ public interface IImageStorage
         Guid operationId,
         int stationId,
         Stream image,
+        CancellationToken ct);
+
+    Task<IReadOnlyCollection<GeneratedImage>> GetImagesAsync(
+        Guid operationId,
         CancellationToken ct);
 }
