@@ -15,7 +15,7 @@ public sealed class ImageSharpWeatherImageRenderer : IWeatherImageRenderer
 
     private const int CardX = 20;
     private const int CardY = 20;
-    private const int CardWidth = 560;
+    private const int CardWidth = 600;
     private const int CardHeight = 430;
 
     private const float TitleX = 40;
@@ -72,10 +72,10 @@ public sealed class ImageSharpWeatherImageRenderer : IWeatherImageRenderer
 
                 var currentY = FirstRowY;
 
-                DrawDetail(canvas, "Temperature", FormatValue(station.TemperatureCelsius, "°C"), bodyFont, bodyColor, currentY);
+                DrawDetail(canvas, "Temperature", FormatTemperature(station.TemperatureCelsius), bodyFont, bodyColor, currentY);
                 currentY += RowHeight;
 
-                DrawDetail(canvas, "Feels like", FormatValue(station.FeelTemperatureCelsius, "°C"), bodyFont, bodyColor, currentY);
+                DrawDetail(canvas, "Feels like", FormatTemperature(station.FeelTemperatureCelsius), bodyFont, bodyColor, currentY);
                 currentY += RowHeight;
 
                 DrawDetail(canvas, "Humidity", FormatValue(station.HumidityPercentage, "%"), bodyFont, bodyColor, currentY);
@@ -148,6 +148,13 @@ public sealed class ImageSharpWeatherImageRenderer : IWeatherImageRenderer
     {
         return value.HasValue
             ? $"{value.Value:0.#} {unit}"
+            : "N/A";
+    }
+
+    private static string FormatTemperature(double? value)
+    {
+        return value.HasValue
+            ? $"{Math.Round(value.Value):0} °C"
             : "N/A";
     }
 

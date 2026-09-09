@@ -14,19 +14,19 @@ public class GetJobResultsHandler(
     private readonly IImageStorage _imageStorage = imageStorage;
     private readonly ILogger<GetJobResultsHandler> _logger = logger;
 
-    public async Task<Result<GetJobResultsResponse?>> HandleAsync(Guid operationId, CancellationToken ct)
+    public async Task<Result<JobResultsData?>> HandleAsync(Guid operationId, CancellationToken ct)
     {
         try
         {
             var job = await _jobStatusRepository.GetJobAsync(operationId, ct);
 
             if (job is null)
-                return Result<GetJobResultsResponse?>.Success(null);
+                return Result<JobResultsData?>.Success(null);
 
             var images = await _imageStorage.GetImagesAsync(operationId, ct);
 
-            return Result<GetJobResultsResponse?>.Success(
-                new GetJobResultsResponse(
+            return Result<JobResultsData?>.Success(
+                new JobResultsData(
                     operationId,
                     job.Status,
                     images));
@@ -38,7 +38,7 @@ public class GetJobResultsHandler(
                 "Failed to retrieve results for operation {OperationId}",
                 operationId);
 
-            return Result<GetJobResultsResponse?>.FailureWith(
+            return Result<JobResultsData?>.FailureWith(
                 JobErrors.ResultsRetrievalFailed);
         }
     }

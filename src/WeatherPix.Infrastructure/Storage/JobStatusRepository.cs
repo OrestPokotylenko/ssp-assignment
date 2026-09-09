@@ -22,7 +22,7 @@ public class JobStatusRepository(
         Job job,
         CancellationToken ct)
     {
-        var entity = new JobEntity
+        var entity = new JobStatusEntity
         {
             PartitionKey = job.OperationId.ToString(),
             RowKey = JobRowKey,
@@ -38,17 +38,18 @@ public class JobStatusRepository(
         JobStatus jobStatus,
         CancellationToken ct)
     {
-        var entity = await _tableClient.GetEntityAsync<JobEntity>(
-            operationId.ToString(),
-            JobRowKey,
-            cancellationToken: ct);
-
-        entity.Value.Status = jobStatus.ToString();
+        var entity = new JobStatusUpdateEntity
+        {
+            PartitionKey = operationId.ToString(),
+            RowKey = JobRowKey,
+            Status = jobStatus.ToString(),
+            ETag = ETag.All
+        };
 
         await _tableClient.UpdateEntityAsync(
-            entity.Value,
-            entity.Value.ETag,
-            TableUpdateMode.Replace,
+            entity,
+            ETag.All,
+            TableUpdateMode.Merge,
             ct);
     }
 
@@ -128,7 +129,7 @@ public class JobStatusRepository(
     {
         try
         {
-            var response = await _tableClient.GetEntityAsync<JobEntity>(
+            var response = await _tableClient.GetEntityAsync<JobStatusEntity>(
                 operationId.ToString(),
                 JobRowKey,
                 cancellationToken: ct);
@@ -142,7 +143,7 @@ public class JobStatusRepository(
     }
 
     private static Job Map(
-        JobEntity entity)
+        JobStatusEntity entity)
     {
         return new Job
         {

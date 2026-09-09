@@ -1,9 +1,11 @@
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using WeatherPix.Application.Jobs.GetStatus;
+using WeatherPix.Functions.Helpers;
 using WeatherPix.Functions.Jobs.Contracts;
 
 namespace WeatherPix.Functions.Jobs;
@@ -20,13 +22,25 @@ public class GetJobStatusFunction(
     public async Task<HttpResponseData> Run(
         [HttpTrigger(AuthorizationLevel.Anonymous,
         "get",
-        Route = "jobs/{operationId:guid}/status")]
+        Route = "jobs/{operationId}/status")]
         HttpRequestData req,
-        Guid operationId,
+        string operationId,
         CancellationToken ct)
     {
-        var result = await _handler.HandleAsync(
+        var parsed = await OperationIdRequestParser.ParseAsync(
             operationId,
+            req,
+            ct);
+
+
+        if (!parsed.Success && parsed.ErrorResponse is not null)
+        {
+            return parsed.ErrorResponse;
+        }
+
+
+        var result = await _handler.HandleAsync(
+            parsed.OperationId,
             ct);
 
         if (result.IsFailure)
@@ -37,7 +51,9 @@ public class GetJobStatusFunction(
             return response;
         }
 
-        if (result.Value is null)
+        var data = result.Value;
+
+        if (data is null)
         {
             return req.CreateResponse(
                 HttpStatusCode.NotFound);
@@ -48,9 +64,10 @@ public class GetJobStatusFunction(
 
         await okResponse.WriteAsJsonAsync(
             new JobStatusResponse(
-                result.Value.OperationId,
-                result.Value.Status,
-                result.Value.CreatedAt),
+                data.Job.OperationId,
+                data.Job.Status,
+                data.Job.CreatedAt,
+                data.Progress),
             ct);
 
         return okResponse;

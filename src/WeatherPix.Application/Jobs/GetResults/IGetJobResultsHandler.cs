@@ -4,7 +4,7 @@ namespace WeatherPix.Application.Jobs.GetResults;
 
 public interface IGetJobResultsHandler
 {
-    Task<Result<GetJobResultsResponse?>> HandleAsync(
+    Task<Result<JobResultsData?>> HandleAsync(
         Guid operationId,
         CancellationToken ct);
 }

@@ -11,16 +11,17 @@ public class ServiceBusMessagePublisher(
     IOptions<ServiceBusOptions> options)
     : IMessagePublisher
 {
-    private readonly ServiceBusClient _client = client;
-    private readonly ServiceBusOptions _options = options.Value;
+    private readonly ServiceBusSender _startJobSender =
+    client.CreateSender(options.Value.StartJobsQueueName);
+
+    private readonly ServiceBusSender _imageJobSender =
+        client.CreateSender(options.Value.ImageJobsQueueName);
 
     public async Task PublishAsync<T>(
         T payload,
         CancellationToken ct) where T : IMessage
     {
-        var queueName = GetQueueNameForType<T>();
-
-        var sender = _client.CreateSender(queueName);
+        var sender = GetSenderForType<T>();
 
         var message = CreateMessage(payload);
 
@@ -37,40 +38,44 @@ public class ServiceBusMessagePublisher(
             return;
         }
 
-        var queueName = GetQueueNameForType<T>();
+        var sender = GetSenderForType<T>();
 
-        await using var sender = _client.CreateSender(queueName);
+        ServiceBusMessageBatch? batch = null;
 
-        ServiceBusMessageBatch batch =
-            await sender.CreateMessageBatchAsync(ct);
-
-        foreach (var payload in payloads)
+        try
         {
-            var message = CreateMessage(payload);
-
-            if (batch.TryAddMessage(message))
-            {
-                continue;
-            }
-
-            await sender.SendMessagesAsync(batch, ct);
-
-            batch.Dispose();
             batch = await sender.CreateMessageBatchAsync(ct);
 
-            if (!batch.TryAddMessage(message))
+            foreach (var payload in payloads)
             {
-                throw new InvalidOperationException(
-                    $"Message of type {typeof(T).Name} is too large for a Service Bus batch.");
+                var message = CreateMessage(payload);
+
+                if (batch.TryAddMessage(message))
+                {
+                    continue;
+                }
+
+                await sender.SendMessagesAsync(batch, ct);
+
+                batch.Dispose();
+                batch = await sender.CreateMessageBatchAsync(ct);
+
+                if (!batch.TryAddMessage(message))
+                {
+                    throw new InvalidOperationException(
+                        $"Message of type {typeof(T).Name} is too large for a Service Bus batch.");
+                }
+            }
+
+            if (batch.Count > 0)
+            {
+                await sender.SendMessagesAsync(batch, ct);
             }
         }
-
-        if (batch.Count > 0)
+        finally
         {
-            await sender.SendMessagesAsync(batch, ct);
+            batch?.Dispose();
         }
-
-        batch.Dispose();
     }
 
     private static ServiceBusMessage CreateMessage<T>(
@@ -84,15 +89,15 @@ public class ServiceBusMessagePublisher(
         };
     }
 
-    private string GetQueueNameForType<T>()
+    private ServiceBusSender GetSenderForType<T>()
     {
         return typeof(T) switch
         {
             var type when type == typeof(StartJobMessage) =>
-                _options.StartJobsQueueName,
+                _startJobSender,
 
             var type when type == typeof(GenerateImageMessage) =>
-                _options.ImageJobsQueueName,
+                _imageJobSender,
 
             _ => throw new InvalidOperationException(
                 $"No queue configured for message type {typeof(T).Name}.")

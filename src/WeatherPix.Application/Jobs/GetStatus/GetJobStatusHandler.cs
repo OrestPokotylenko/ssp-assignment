@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using WeatherPix.Application.Abstractions;
 using WeatherPix.Application.Common.Results;
-using WeatherPix.Domain.Job;
 
 namespace WeatherPix.Application.Jobs.GetStatus;
 
@@ -14,7 +13,7 @@ public class GetJobStatusHandler(
 
     private readonly ILogger<GetJobStatusHandler> _logger = logger;
 
-    public async Task<Result<Job?>> HandleAsync(
+    public async Task<Result<JobStatusDetails?>> HandleAsync(
         Guid operationId,
         CancellationToken ct)
     {
@@ -24,7 +23,19 @@ public class GetJobStatusHandler(
                 operationId,
                 ct);
 
-            return Result<Job?>.Success(job);
+            if (job is null)
+            {
+                return Result<JobStatusDetails?>.Success(null);
+            }
+
+            var progress = await _jobStatusRepository.GetProgressAsync(
+                operationId,
+                ct);
+
+            return Result<JobStatusDetails?>.Success(
+                new JobStatusDetails(
+                    job,
+                    progress));
         }
         catch (Exception ex)
         {
@@ -33,7 +44,7 @@ public class GetJobStatusHandler(
                 "Failed to retrieve job {OperationId}",
                 operationId);
 
-            return Result<Job?>.FailureWith(
+            return Result<JobStatusDetails?>.FailureWith(
                 JobErrors.StatusRetrievalFailed);
         }
     }

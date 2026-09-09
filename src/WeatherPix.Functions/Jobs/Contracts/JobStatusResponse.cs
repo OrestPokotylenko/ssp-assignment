@@ -5,4 +5,5 @@ namespace WeatherPix.Functions.Jobs.Contracts;
 public sealed record JobStatusResponse(
     Guid OperationId,
     JobStatus Status,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    JobProgress Progress);
