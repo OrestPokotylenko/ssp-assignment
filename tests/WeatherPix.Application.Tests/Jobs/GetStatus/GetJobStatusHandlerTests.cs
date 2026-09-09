@@ -27,7 +27,7 @@ public class GetJobStatusHandlerTests
     }
 
     [Fact]
-    public async Task HandleAsync_WhenJobExists_ReturnsJob()
+    public async Task HandleAsync_WhenJobExists_ReturnsJobWithProgress()
     {
         // Arrange
         var operationId = Guid.NewGuid();
@@ -39,11 +39,22 @@ public class GetJobStatusHandlerTests
             CreatedAt = DateTimeOffset.UtcNow
         };
 
+        var progress = new JobProgress(
+            Total: 40,
+            Succeeded: 15,
+            Failed: 2);
+
         _jobStatusRepository
             .GetJobAsync(
                 operationId,
                 Arg.Any<CancellationToken>())
             .Returns(job);
+
+        _jobStatusRepository
+            .GetProgressAsync(
+                operationId,
+                Arg.Any<CancellationToken>())
+            .Returns(progress);
 
         // Act
         var result = await _handler.HandleAsync(
@@ -53,8 +64,13 @@ public class GetJobStatusHandlerTests
         // Assert
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
-        Assert.Equal(operationId, result.Value.OperationId);
-        Assert.Equal(JobStatus.Processing, result.Value.Status);
+
+        Assert.Equal(operationId, result.Value.Job.OperationId);
+        Assert.Equal(JobStatus.Processing, result.Value.Job.Status);
+
+        Assert.Equal(40, result.Value.Progress.Total);
+        Assert.Equal(15, result.Value.Progress.Succeeded);
+        Assert.Equal(2, result.Value.Progress.Failed);
     }
 
     [Fact]
