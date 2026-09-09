@@ -17,4 +17,10 @@ public sealed class StorageOptions
 
     [Required]
     public required string GeneratedImagesContainerName { get; init; }
+
+    [Required]
+    public required int SasExpirationMinutes { get; init; }
+
+    [Required]
+    public required int SasClockSkewMinutes { get; init; }
 }

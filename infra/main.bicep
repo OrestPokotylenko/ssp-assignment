@@ -10,6 +10,9 @@ param location string = 'francecentral'
 param projectName string = 'weatherpix'
 param pexelsSecretName string = 'pexels-api-key'
 
+param sasExpirationMinutes int = 30
+param sasClockSkewMinutes int = 1
+
 param weatherStationCount int = 50
 param buienradarBaseUrl string = 'https://data.buienradar.nl/2.0/feed/json'
 param pexelsBaseUrl string = 'https://api.pexels.com/'
@@ -113,6 +116,8 @@ module functionApp './modules/function-app.bicep' = {
     serviceBusFullyQualifiedNamespace: serviceBus.outputs.fullyQualifiedNamespace
     startJobsQueueName: serviceBus.outputs.startJobsQueueName
     imageJobsQueueName: serviceBus.outputs.imageJobsQueueName
+    sasExpirationMinutes: sasExpirationMinutes
+    sasClockSkewMinutes: sasClockSkewMinutes
 
     generatedImagesContainerName: storage.outputs.generatedImagesContainerName
     jobStatusTableName: storage.outputs.jobStatusTableName

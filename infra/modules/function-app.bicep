@@ -7,6 +7,8 @@ param tags object = {}
 param storageAccountName string
 param storageBlobEndpoint string
 param deploymentContainerName string
+param sasExpirationMinutes int
+param sasClockSkewMinutes int
 
 param serviceBusFullyQualifiedNamespace string
 param startJobsQueueName string
@@ -111,6 +113,9 @@ resource appSettings 'Microsoft.Web/sites/config@2024-04-01' = {
 
     Storage__GeneratedImagesContainerName: generatedImagesContainerName
     Storage__JobStatusTableName: jobStatusTableName
+
+    Storage__SasExpirationMinutes: string(sasExpirationMinutes)
+    Storage__SasClockSkewMinutes: string(sasClockSkewMinutes)
 
     WeatherStation__Count: string(weatherStationCount)
 

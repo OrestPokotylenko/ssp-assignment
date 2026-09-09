@@ -30,7 +30,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2024-01-01' = {
     publicNetworkAccess: 'Enabled'
 
     sasPolicy: {
-      sasExpirationPeriod: '00.00:15:00'
+      sasExpirationPeriod: '00.00:30:00'
       expirationAction: 'Block'
     }
   }

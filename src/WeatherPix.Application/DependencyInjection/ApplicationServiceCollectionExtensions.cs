@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using WeatherPix.Application.Abstractions;
 using WeatherPix.Application.Images;
+using WeatherPix.Application.Jobs.GetResults;
 using WeatherPix.Application.Jobs.GetStatus;
 using WeatherPix.Application.Jobs.QueueJob;
 using WeatherPix.Application.Jobs.StartJob;
@@ -24,6 +25,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<IStartJobHandler, StartJobHandler>();
         services.AddScoped<IGetJobStatusHandler, GetJobStatusHandler>();
         services.AddScoped<IGenerateWeatherImageHandler, GenerateWeatherImageHandler>();
+        services.AddScoped<GetJobResultsHandler>();
 
         return services;
     }
