@@ -6,6 +6,12 @@ targetScope = 'subscription'
 ])
 param environment string
 
+@allowed([
+  'Staging'
+  'Production'
+])
+param functionsEnvironment string
+
 param location string = 'francecentral'
 param projectName string = 'weatherpix'
 param pexelsSecretName string = 'pexels-api-key'
@@ -114,6 +120,7 @@ module functionApp './modules/function-app.bicep' = {
     location: location
     tags: tags
 
+    functionsEnvironment: functionsEnvironment
     storageAccountName: storage.outputs.name
     storageBlobEndpoint: storage.outputs.blobEndpoint
     deploymentContainerName: storage.outputs.deploymentContainerName

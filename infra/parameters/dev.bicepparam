@@ -1,5 +1,7 @@
 using '../main.bicep'
 
+param functionsEnvironment = 'Staging'
+
 param environment = 'dev'
 param location = 'francecentral'
 
