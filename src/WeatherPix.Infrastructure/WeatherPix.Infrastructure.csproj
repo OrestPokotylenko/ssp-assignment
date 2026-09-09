@@ -29,4 +29,11 @@
 		<SixLaborsLicenseKey>$(SIXLABORS_LICENSE_KEY)</SixLaborsLicenseKey>
 	</PropertyGroup>
 
+	<ItemGroup>
+		<Content Include="Images\Fonts\**\*">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		</Content>
+	</ItemGroup>
+
 </Project>
