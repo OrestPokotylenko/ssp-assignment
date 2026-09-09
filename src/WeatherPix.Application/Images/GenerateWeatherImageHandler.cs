@@ -62,16 +62,8 @@ public class GenerateWeatherImageHandler(
         var weatherData = MapToWeatherStation(message);
         var query = BuildImageQuery(message);
 
-        _logger.LogInformation(
-            "Downloading image for station {StationId}",
-            message.StationId);
-
         await using var sourceImage =
             await _imageProvider.GetImageAsync(query, ct);
-
-        _logger.LogInformation(
-            "Rendering image for station {StationId}",
-            message.StationId);
 
         await using var renderedImage =
             await _imageRenderer.RenderAsync(
@@ -79,19 +71,12 @@ public class GenerateWeatherImageHandler(
                 weatherData,
                 ct);
 
-        _logger.LogInformation(
-            "Uploading image for station {StationId}",
-            message.StationId);
 
         await _imageStorage.UploadAsync(
             message.OperationId,
             message.StationId,
             renderedImage,
             ct);
-
-        _logger.LogInformation(
-            "Image uploaded for station {StationId}",
-            message.StationId);
     }
 
     private Task MarkStationProcessingAsync(

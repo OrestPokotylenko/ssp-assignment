@@ -26,6 +26,29 @@ public sealed class ImageSharpWeatherImageRenderer : IWeatherImageRenderer
     private const float FirstRowY = 155;
     private const float RowHeight = 31;
 
+    private readonly FontFamily _regularFontFamily;
+    private readonly FontFamily _boldFontFamily;
+
+    public ImageSharpWeatherImageRenderer()
+    {
+        var fontCollection = new FontCollection();
+
+        var regularFontPath = Path.Combine(
+            AppContext.BaseDirectory,
+            "Images",
+            "Fonts",
+            "Inter-Regular.ttf");
+
+        var boldFontPath = Path.Combine(
+            AppContext.BaseDirectory,
+            "Images",
+            "Fonts",
+            "Inter-Bold.ttf");
+
+        _regularFontFamily = fontCollection.Add(regularFontPath);
+        _boldFontFamily = fontCollection.Add(boldFontPath);
+    }
+
     public async Task<Stream> RenderAsync(
         Stream sourceImage,
         WeatherStation station,
@@ -36,9 +59,9 @@ public sealed class ImageSharpWeatherImageRenderer : IWeatherImageRenderer
         var titleColor = Color.ParseHex("#2D2D2D");
         var bodyColor = Color.ParseHex("#414141");
 
-        var titleFont = SystemFonts.CreateFont("Arial", 34, FontStyle.Bold);
-        var subtitleFont = SystemFonts.CreateFont("Arial", 28, FontStyle.Bold);
-        var bodyFont = SystemFonts.CreateFont("Arial", 20, FontStyle.Regular);
+        var titleFont = _boldFontFamily.CreateFont(34);
+        var subtitleFont = _boldFontFamily.CreateFont(28);
+        var bodyFont = _regularFontFamily.CreateFont(20);
 
         image.Mutate(ctx =>
         {
@@ -52,11 +75,15 @@ public sealed class ImageSharpWeatherImageRenderer : IWeatherImageRenderer
             {
                 canvas.Fill(
                     Brushes.Solid(Color.White.WithAlpha(0.2f)),
-                    new Rectangle(CardX, CardY, CardWidth, CardHeight));
+                    new Rectangle(
+                        CardX,
+                        CardY,
+                        CardWidth,
+                        CardHeight));
 
                 DrawText(
                     canvas,
-                    $"{station.Name ?? "Unknown station"}",
+                    station.Name ?? "Unknown station",
                     titleFont,
                     titleColor,
                     TitleX,
@@ -64,7 +91,7 @@ public sealed class ImageSharpWeatherImageRenderer : IWeatherImageRenderer
 
                 DrawText(
                     canvas,
-                    $"{station.Region ?? "Unknown region"}",
+                    station.Region ?? "Unknown region",
                     subtitleFont,
                     titleColor,
                     TitleX,
@@ -72,28 +99,89 @@ public sealed class ImageSharpWeatherImageRenderer : IWeatherImageRenderer
 
                 var currentY = FirstRowY;
 
-                DrawDetail(canvas, "Temperature", FormatTemperature(station.TemperatureCelsius), bodyFont, bodyColor, currentY);
+                DrawDetail(
+                    canvas,
+                    "Temperature",
+                    FormatTemperature(station.TemperatureCelsius),
+                    bodyFont,
+                    bodyColor,
+                    currentY);
+
                 currentY += RowHeight;
 
-                DrawDetail(canvas, "Feels like", FormatTemperature(station.FeelTemperatureCelsius), bodyFont, bodyColor, currentY);
+                DrawDetail(
+                    canvas,
+                    "Feels like",
+                    FormatTemperature(station.FeelTemperatureCelsius),
+                    bodyFont,
+                    bodyColor,
+                    currentY);
+
                 currentY += RowHeight;
 
-                DrawDetail(canvas, "Humidity", FormatValue(station.HumidityPercentage, "%"), bodyFont, bodyColor, currentY);
+                DrawDetail(
+                    canvas,
+                    "Humidity",
+                    FormatValue(station.HumidityPercentage, "%"),
+                    bodyFont,
+                    bodyColor,
+                    currentY);
+
                 currentY += RowHeight;
 
-                DrawDetail(canvas, "Wind", FormatWind(station.WindSpeedMetersPerSecond, station.WindDirection), bodyFont, bodyColor, currentY);
+                DrawDetail(
+                    canvas,
+                    "Wind",
+                    FormatWind(
+                        station.WindSpeedMetersPerSecond,
+                        station.WindDirection),
+                    bodyFont,
+                    bodyColor,
+                    currentY);
+
                 currentY += RowHeight;
 
-                DrawDetail(canvas, "Wind gusts", FormatValue(station.WindGustMetersPerSecond, "m/s"), bodyFont, bodyColor, currentY);
+                DrawDetail(
+                    canvas,
+                    "Wind gusts",
+                    FormatValue(
+                        station.WindGustMetersPerSecond,
+                        "m/s"),
+                    bodyFont,
+                    bodyColor,
+                    currentY);
+
                 currentY += RowHeight;
 
-                DrawDetail(canvas, "Pressure", FormatValue(station.AirPressure, "hPa"), bodyFont, bodyColor, currentY);
+                DrawDetail(
+                    canvas,
+                    "Pressure",
+                    FormatValue(
+                        station.AirPressure,
+                        "hPa"),
+                    bodyFont,
+                    bodyColor,
+                    currentY);
+
                 currentY += RowHeight;
 
-                DrawDetail(canvas, "Visibility", FormatVisibility(station.VisibilityMeters), bodyFont, bodyColor, currentY);
+                DrawDetail(
+                    canvas,
+                    "Visibility",
+                    FormatVisibility(station.VisibilityMeters),
+                    bodyFont,
+                    bodyColor,
+                    currentY);
+
                 currentY += RowHeight;
 
-                DrawDetail(canvas, "Measured", station.MeasuredAt.ToString("dd-MM-yyyy HH:mm"), bodyFont, bodyColor, currentY);
+                DrawDetail(
+                    canvas,
+                    "Measured",
+                    station.MeasuredAt.ToString("dd-MM-yyyy HH:mm"),
+                    bodyFont,
+                    bodyColor,
+                    currentY);
             });
         });
 
@@ -120,8 +208,21 @@ public sealed class ImageSharpWeatherImageRenderer : IWeatherImageRenderer
         Color color,
         float y)
     {
-        DrawText(canvas, label, font, color, LabelX, y);
-        DrawText(canvas, value, font, color, ValueX, y);
+        DrawText(
+            canvas,
+            label,
+            font,
+            color,
+            LabelX,
+            y);
+
+        DrawText(
+            canvas,
+            value,
+            font,
+            color,
+            ValueX,
+            y);
     }
 
     private static void DrawText(
@@ -144,21 +245,25 @@ public sealed class ImageSharpWeatherImageRenderer : IWeatherImageRenderer
             pen: null);
     }
 
-    private static string FormatValue(double? value, string unit)
+    private static string FormatValue(
+        double? value,
+        string unit)
     {
         return value.HasValue
             ? $"{value.Value:0.#} {unit}"
             : "N/A";
     }
 
-    private static string FormatTemperature(double? value)
+    private static string FormatTemperature(
+        double? value)
     {
         return value.HasValue
             ? $"{Math.Round(value.Value):0} °C"
             : "N/A";
     }
 
-    private static string FormatVisibility(double? meters)
+    private static string FormatVisibility(
+        double? meters)
     {
         if (!meters.HasValue)
         {
@@ -170,9 +275,12 @@ public sealed class ImageSharpWeatherImageRenderer : IWeatherImageRenderer
             : $"{meters.Value:0} m";
     }
 
-    private static string FormatWind(double? speed, string? direction)
+    private static string FormatWind(
+        double? speed,
+        string? direction)
     {
-        var speedText = FormatValue(speed, "m/s");
+        var speedText =
+            FormatValue(speed, "m/s");
 
         return string.IsNullOrWhiteSpace(direction)
             ? speedText
