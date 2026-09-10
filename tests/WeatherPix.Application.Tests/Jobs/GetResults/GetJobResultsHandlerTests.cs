@@ -13,8 +13,9 @@ public class GetJobResultsHandlerTests
     private readonly IJobStatusRepository _jobStatusRepository;
     private readonly IImageStorage _imageStorage;
     private readonly ILogger<GetJobResultsHandler> _logger;
-
     private readonly GetJobResultsHandler _handler;
+
+    private const string UserId = "test-user";
 
     public GetJobResultsHandlerTests()
     {
@@ -37,6 +38,7 @@ public class GetJobResultsHandlerTests
         var job = new Job
         {
             OperationId = operationId,
+            OwnerId = UserId,
             Status = JobStatus.Succeeded,
             CreatedAt = DateTimeOffset.UtcNow
         };
@@ -48,15 +50,21 @@ public class GetJobResultsHandlerTests
         };
 
         _jobStatusRepository
-            .GetJobAsync(operationId, Arg.Any<CancellationToken>())
+            .GetJobAsync(
+                UserId,
+                operationId,
+                Arg.Any<CancellationToken>())
             .Returns(job);
 
         _imageStorage
-            .GetImagesAsync(operationId, Arg.Any<CancellationToken>())
+            .GetImagesAsync(
+                operationId,
+                Arg.Any<CancellationToken>())
             .Returns(images);
 
         // Act
         var result = await _handler.HandleAsync(
+            UserId,
             operationId,
             CancellationToken.None);
 
@@ -76,11 +84,15 @@ public class GetJobResultsHandlerTests
         var operationId = Guid.NewGuid();
 
         _jobStatusRepository
-            .GetJobAsync(operationId, Arg.Any<CancellationToken>())
+            .GetJobAsync(
+                UserId,
+                operationId,
+                Arg.Any<CancellationToken>())
             .Returns((Job?)null);
 
         // Act
         var result = await _handler.HandleAsync(
+            UserId,
             operationId,
             CancellationToken.None);
 
@@ -88,7 +100,38 @@ public class GetJobResultsHandlerTests
         Assert.True(result.IsSuccess);
         Assert.Null(result.Value);
 
-        await _imageStorage.DidNotReceive()
+        await _imageStorage
+            .DidNotReceive()
+            .GetImagesAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenJobBelongsToAnotherUser_ReturnsNull()
+    {
+        // Arrange
+        var operationId = Guid.NewGuid();
+
+        _jobStatusRepository
+            .GetJobAsync(
+                UserId,
+                operationId,
+                Arg.Any<CancellationToken>())
+            .Returns((Job?)null);
+
+        // Act
+        var result = await _handler.HandleAsync(
+            UserId,
+            operationId,
+            CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Null(result.Value);
+
+        await _imageStorage
+            .DidNotReceive()
             .GetImagesAsync(
                 Arg.Any<Guid>(),
                 Arg.Any<CancellationToken>());
@@ -103,26 +146,36 @@ public class GetJobResultsHandlerTests
         var job = new Job
         {
             OperationId = operationId,
+            OwnerId = UserId,
             Status = JobStatus.Succeeded,
             CreatedAt = DateTimeOffset.UtcNow
         };
 
         _jobStatusRepository
-            .GetJobAsync(operationId, Arg.Any<CancellationToken>())
+            .GetJobAsync(
+                UserId,
+                operationId,
+                Arg.Any<CancellationToken>())
             .Returns(job);
 
         _imageStorage
-            .GetImagesAsync(operationId, Arg.Any<CancellationToken>())
+            .GetImagesAsync(
+                operationId,
+                Arg.Any<CancellationToken>())
             .Returns<Task<IReadOnlyCollection<GeneratedImage>>>(
                 _ => throw new Exception("Blob failure"));
 
         // Act
         var result = await _handler.HandleAsync(
+            UserId,
             operationId,
             CancellationToken.None);
 
         // Assert
         Assert.True(result.IsFailure);
+        Assert.Equal(
+            JobErrors.ResultsRetrievalFailed.Code,
+            result.Error!.Code);
     }
 
     [Fact]
@@ -134,20 +187,27 @@ public class GetJobResultsHandlerTests
         var job = new Job
         {
             OperationId = operationId,
+            OwnerId = UserId,
             Status = JobStatus.Processing,
             CreatedAt = DateTimeOffset.UtcNow
         };
 
         _jobStatusRepository
-            .GetJobAsync(operationId, Arg.Any<CancellationToken>())
+            .GetJobAsync(
+                UserId,
+                operationId,
+                Arg.Any<CancellationToken>())
             .Returns(job);
 
         _imageStorage
-            .GetImagesAsync(operationId, Arg.Any<CancellationToken>())
+            .GetImagesAsync(
+                operationId,
+                Arg.Any<CancellationToken>())
             .Returns(Array.Empty<GeneratedImage>());
 
         // Act
         var result = await _handler.HandleAsync(
+            UserId,
             operationId,
             CancellationToken.None);
 
@@ -158,5 +218,33 @@ public class GetJobResultsHandlerTests
         Assert.Equal(operationId, result.Value.OperationId);
         Assert.Equal(JobStatus.Processing, result.Value.Status);
         Assert.Empty(result.Value.Images);
+    }
+
+    [Fact]
+    public async Task HandleAsync_CallsRepositoryWithCorrectUserIdAndOperationId()
+    {
+        // Arrange
+        var operationId = Guid.NewGuid();
+
+        _jobStatusRepository
+            .GetJobAsync(
+                UserId,
+                operationId,
+                Arg.Any<CancellationToken>())
+            .Returns((Job?)null);
+
+        // Act
+        await _handler.HandleAsync(
+            UserId,
+            operationId,
+            CancellationToken.None);
+
+        // Assert
+        await _jobStatusRepository
+            .Received(1)
+            .GetJobAsync(
+                UserId,
+                operationId,
+                Arg.Any<CancellationToken>());
     }
 }

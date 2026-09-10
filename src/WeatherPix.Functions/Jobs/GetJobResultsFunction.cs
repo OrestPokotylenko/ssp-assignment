@@ -62,7 +62,10 @@ public class GetJobResultsFunction(
                 return parsed.ErrorResponse;
             }
 
-            var result = await _handler.HandleAsync(parsed.OperationId, ct);
+            var result = await _handler.HandleAsync(
+                auth.Subject!,
+                parsed.OperationId,
+                ct);
 
             if (result.IsFailure)
             {

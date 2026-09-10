@@ -14,11 +14,17 @@ public class GetJobResultsHandler(
     private readonly IImageStorage _imageStorage = imageStorage;
     private readonly ILogger<GetJobResultsHandler> _logger = logger;
 
-    public async Task<Result<JobResultsData?>> HandleAsync(Guid operationId, CancellationToken ct)
+    public async Task<Result<JobResultsData?>> HandleAsync(
+        string userId,
+        Guid operationId,
+        CancellationToken ct)
     {
         try
         {
-            var job = await _jobStatusRepository.GetJobAsync(operationId, ct);
+            var job = await _jobStatusRepository.GetJobAsync(
+                userId,
+                operationId,
+                ct);
 
             if (job is null)
                 return Result<JobResultsData?>.Success(null);

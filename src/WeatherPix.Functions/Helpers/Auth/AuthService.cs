@@ -3,6 +3,7 @@ using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using WeatherPix.Functions.Helpers.Auth.Options;
 using FunctionHttpRequestData = Microsoft.Azure.Functions.Worker.Http.HttpRequestData;
 
@@ -25,73 +26,34 @@ public sealed class AuthService(
         string requiredScope,
         CancellationToken ct)
     {
-        if (!request.Headers.TryGetValues(
-                "Authorization",
-                out var values))
-        {
-            return AuthResult.Unauthorized();
-        }
+        var token = GetBearerToken(request);
 
-        var header = values.FirstOrDefault();
-
-        if (string.IsNullOrWhiteSpace(header) ||
-            !header.StartsWith(
-                BearerPrefix,
-                StringComparison.OrdinalIgnoreCase))
-        {
-            return AuthResult.Unauthorized();
-        }
-
-        var token = header[BearerPrefix.Length..].Trim();
-
-        if (string.IsNullOrWhiteSpace(token))
+        if (token is null)
         {
             return AuthResult.Unauthorized();
         }
 
         try
         {
-            var config =
-                await _configurationManager.GetConfigurationAsync(ct);
+            var principal = await ValidateTokenAsync(token, ct);
 
-            var validationParameters =
-                new TokenValidationParameters
-                {
-                    ValidIssuer = $"https://{_options.Domain}/",
-                    ValidAudience = _options.Audience,
+            var subject = principal.FindFirst("sub")?.Value;
 
-                    IssuerSigningKeys = config.SigningKeys,
+            if (string.IsNullOrWhiteSpace(subject))
+            {
+                return AuthResult.Unauthorized();
+            }
 
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true
-                };
-
-            var tokenHandler =
-                new JwtSecurityTokenHandler();
-
-            var principal =
-                tokenHandler.ValidateToken(
-                    token,
-                    validationParameters,
-                    out _);
-
-            var scopes =
-                principal.FindFirst("scope")?.Value
-                    .Split(
-                        ' ',
-                        StringSplitOptions.RemoveEmptyEntries)
-                ?? [];
-
-            if (!scopes.Contains(
-                    requiredScope,
-                    StringComparer.Ordinal))
+            if (!HasScope(principal, requiredScope))
             {
                 return AuthResult.Forbidden();
             }
 
-            return AuthResult.Success();
+            return AuthResult.Success(subject);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
         }
         catch (SecurityTokenException)
         {
@@ -101,5 +63,80 @@ public sealed class AuthService(
         {
             return AuthResult.Unauthorized();
         }
+    }
+
+    private static string? GetBearerToken(
+        FunctionHttpRequestData request)
+    {
+        if (!request.Headers.TryGetValues(
+                "Authorization",
+                out var values))
+        {
+            return null;
+        }
+
+        var header = values.FirstOrDefault();
+
+        if (string.IsNullOrWhiteSpace(header) ||
+            !header.StartsWith(
+                BearerPrefix,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var token = header[BearerPrefix.Length..].Trim();
+
+        return string.IsNullOrWhiteSpace(token)
+            ? null
+            : token;
+    }
+
+    private async Task<ClaimsPrincipal> ValidateTokenAsync(
+        string token,
+        CancellationToken ct)
+    {
+        var config =
+            await _configurationManager.GetConfigurationAsync(ct);
+
+        var validationParameters =
+            new TokenValidationParameters
+            {
+                ValidIssuer = $"https://{_options.Domain}/",
+                ValidAudience = _options.Audience,
+                IssuerSigningKeys = config.SigningKeys,
+
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true
+            };
+
+        var tokenHandler =
+            new JwtSecurityTokenHandler
+            {
+                MapInboundClaims = false
+            };
+
+        return tokenHandler.ValidateToken(
+            token,
+            validationParameters,
+            out _);
+    }
+
+    private static bool HasScope(
+        ClaimsPrincipal principal,
+        string requiredScope)
+    {
+        var scopes =
+            principal.FindFirst("scope")?.Value
+                .Split(
+                    ' ',
+                    StringSplitOptions.RemoveEmptyEntries)
+            ?? [];
+
+        return scopes.Contains(
+            requiredScope,
+            StringComparer.Ordinal);
     }
 }

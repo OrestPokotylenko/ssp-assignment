@@ -15,6 +15,8 @@ public class QueueJobHandlerTests
     private readonly ILogger<QueueJobHandler> _logger;
     private readonly QueueJobHandler _handler;
 
+    private const string UserId = "test-user";
+
     public QueueJobHandlerTests()
     {
         _messagePublisher = Substitute.For<IMessagePublisher>();
@@ -31,7 +33,9 @@ public class QueueJobHandlerTests
     public async Task QueueJobAsync_WhenEverythingSucceeds_ReturnsOperationId()
     {
         // Act
-        var result = await _handler.QueueJobAsync(CancellationToken.None);
+        var result = await _handler.QueueJobAsync(
+            UserId,
+            CancellationToken.None);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -62,7 +66,9 @@ public class QueueJobHandlerTests
                 new Exception("Table Storage failed")));
 
         // Act
-        var result = await _handler.QueueJobAsync(CancellationToken.None);
+        var result = await _handler.QueueJobAsync(
+            UserId,
+            CancellationToken.None);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -86,7 +92,9 @@ public class QueueJobHandlerTests
                 new Exception("Service Bus failed")));
 
         // Act
-        var result = await _handler.QueueJobAsync(CancellationToken.None);
+        var result = await _handler.QueueJobAsync(
+            UserId,
+            CancellationToken.None);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -119,7 +127,9 @@ public class QueueJobHandlerTests
                 new Exception("Table Storage update failed")));
 
         // Act
-        var result = await _handler.QueueJobAsync(CancellationToken.None);
+        var result = await _handler.QueueJobAsync(
+            UserId,
+            CancellationToken.None);
 
         // Assert
         Assert.True(result.IsFailure);

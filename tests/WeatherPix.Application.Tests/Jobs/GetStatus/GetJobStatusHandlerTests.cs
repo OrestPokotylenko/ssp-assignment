@@ -13,6 +13,8 @@ public class GetJobStatusHandlerTests
     private readonly ILogger<GetJobStatusHandler> _logger;
     private readonly GetJobStatusHandler _handler;
 
+    private const string UserId = "test-user";
+
     public GetJobStatusHandlerTests()
     {
         _jobStatusRepository =
@@ -35,6 +37,7 @@ public class GetJobStatusHandlerTests
         var job = new Job
         {
             OperationId = operationId,
+            OwnerId = UserId,
             Status = JobStatus.Processing,
             CreatedAt = DateTimeOffset.UtcNow
         };
@@ -46,6 +49,7 @@ public class GetJobStatusHandlerTests
 
         _jobStatusRepository
             .GetJobAsync(
+                UserId,
                 operationId,
                 Arg.Any<CancellationToken>())
             .Returns(job);
@@ -58,6 +62,7 @@ public class GetJobStatusHandlerTests
 
         // Act
         var result = await _handler.HandleAsync(
+            UserId,
             operationId,
             CancellationToken.None);
 
@@ -65,12 +70,38 @@ public class GetJobStatusHandlerTests
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
 
-        Assert.Equal(operationId, result.Value.Job.OperationId);
-        Assert.Equal(JobStatus.Processing, result.Value.Job.Status);
+        Assert.Equal(
+            operationId,
+            result.Value.Job.OperationId);
 
-        Assert.Equal(40, result.Value.Progress.Total);
-        Assert.Equal(15, result.Value.Progress.Succeeded);
-        Assert.Equal(2, result.Value.Progress.Failed);
+        Assert.Equal(
+            JobStatus.Processing,
+            result.Value.Job.Status);
+
+        Assert.Equal(
+            40,
+            result.Value.Progress.Total);
+
+        Assert.Equal(
+            15,
+            result.Value.Progress.Succeeded);
+
+        Assert.Equal(
+            2,
+            result.Value.Progress.Failed);
+
+        await _jobStatusRepository
+            .Received(1)
+            .GetJobAsync(
+                UserId,
+                operationId,
+                Arg.Any<CancellationToken>());
+
+        await _jobStatusRepository
+            .Received(1)
+            .GetProgressAsync(
+                operationId,
+                Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -81,18 +112,26 @@ public class GetJobStatusHandlerTests
 
         _jobStatusRepository
             .GetJobAsync(
+                UserId,
                 operationId,
                 Arg.Any<CancellationToken>())
             .Returns((Job?)null);
 
         // Act
         var result = await _handler.HandleAsync(
+            UserId,
             operationId,
             CancellationToken.None);
 
         // Assert
         Assert.True(result.IsSuccess);
         Assert.Null(result.Value);
+
+        await _jobStatusRepository
+            .DidNotReceive()
+            .GetProgressAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -103,6 +142,7 @@ public class GetJobStatusHandlerTests
 
         _jobStatusRepository
             .GetJobAsync(
+                UserId,
                 operationId,
                 Arg.Any<CancellationToken>())
             .Returns(Task.FromException<Job?>(
@@ -110,30 +150,40 @@ public class GetJobStatusHandlerTests
 
         // Act
         var result = await _handler.HandleAsync(
+            UserId,
             operationId,
             CancellationToken.None);
 
         // Assert
         Assert.True(result.IsFailure);
+
         Assert.Equal(
             JobErrors.StatusRetrievalFailed.Code,
             result.Error!.Code);
+
+        await _jobStatusRepository
+            .DidNotReceive()
+            .GetProgressAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task HandleAsync_CallsRepositoryWithCorrectOperationId()
+    public async Task HandleAsync_CallsRepositoryWithCorrectUserIdAndOperationId()
     {
         // Arrange
         var operationId = Guid.NewGuid();
 
         _jobStatusRepository
             .GetJobAsync(
+                UserId,
                 operationId,
                 Arg.Any<CancellationToken>())
             .Returns((Job?)null);
 
         // Act
         await _handler.HandleAsync(
+            UserId,
             operationId,
             CancellationToken.None);
 
@@ -141,7 +191,38 @@ public class GetJobStatusHandlerTests
         await _jobStatusRepository
             .Received(1)
             .GetJobAsync(
+                UserId,
                 operationId,
+                Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenJobBelongsToAnotherUser_ReturnsSuccessWithNull()
+    {
+        // Arrange
+        var operationId = Guid.NewGuid();
+
+        _jobStatusRepository
+            .GetJobAsync(
+                UserId,
+                operationId,
+                Arg.Any<CancellationToken>())
+            .Returns((Job?)null);
+
+        // Act
+        var result = await _handler.HandleAsync(
+            UserId,
+            operationId,
+            CancellationToken.None);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Null(result.Value);
+
+        await _jobStatusRepository
+            .DidNotReceive()
+            .GetProgressAsync(
+                Arg.Any<Guid>(),
                 Arg.Any<CancellationToken>());
     }
 }

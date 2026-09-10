@@ -61,6 +61,7 @@ public class GetJobStatusFunction(
             }
 
             var result = await _handler.HandleAsync(
+                auth.Subject!,
                 parsed.OperationId,
                 ct);
 

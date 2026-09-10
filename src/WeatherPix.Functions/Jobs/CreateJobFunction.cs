@@ -2,7 +2,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Options;
 using System.Net;
-using WeatherPix.Application.Abstractions;
+using WeatherPix.Application.Jobs.QueueJob;
 using WeatherPix.Functions.Helpers.Auth;
 using WeatherPix.Functions.Helpers.Auth.Options;
 using WeatherPix.Functions.Jobs.Contracts;
@@ -47,7 +47,9 @@ public class CreateJobFunction(
                 return unauthorizedResponse;
             }
 
-            var result = await _queueJobHandler.QueueJobAsync(ct);
+            var result = await _queueJobHandler.QueueJobAsync(
+                auth.Subject!,
+                ct);
 
             if (!result.IsSuccess)
             {

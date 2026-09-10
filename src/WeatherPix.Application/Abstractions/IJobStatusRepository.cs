@@ -14,6 +14,7 @@ public interface IJobStatusRepository
         CancellationToken ct);
 
     Task<Job?> GetJobAsync(
+        string ownerId,
         Guid operationId,
         CancellationToken ct);
 

@@ -27,7 +27,8 @@ public class JobStatusRepository(
             PartitionKey = job.OperationId.ToString(),
             RowKey = JobRowKey,
             Status = job.Status.ToString(),
-            CreatedAt = job.CreatedAt
+            CreatedAt = job.CreatedAt,
+            OwnerId = job.OwnerId
         };
 
         await _tableClient.AddEntityAsync(entity, ct);
@@ -124,6 +125,7 @@ public class JobStatusRepository(
     }
 
     public async Task<Job?> GetJobAsync(
+        string ownerId,
         Guid operationId,
         CancellationToken ct)
     {
@@ -134,7 +136,17 @@ public class JobStatusRepository(
                 JobRowKey,
                 cancellationToken: ct);
 
-            return Map(response.Value);
+            var entity = response.Value;
+
+            if (!string.Equals(
+                entity.OwnerId,
+                ownerId,
+                StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            return Map(entity);
         }
         catch (RequestFailedException ex) when (ex.Status == 404)
         {
@@ -151,7 +163,9 @@ public class JobStatusRepository(
             Status = Enum.Parse<JobStatus>(
                 entity.Status,
                 ignoreCase: true),
-            CreatedAt = entity.CreatedAt
+
+            CreatedAt = entity.CreatedAt,
+            OwnerId = entity.OwnerId
         };
     }
 }
