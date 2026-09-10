@@ -10,7 +10,7 @@ internal class JobStatusEntity : ITableEntity
 
     public required string Status { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
-
+    public required string OwnerId { get; set; }
     public DateTimeOffset? Timestamp { get; set; }
     public ETag ETag { get; set; }
 }

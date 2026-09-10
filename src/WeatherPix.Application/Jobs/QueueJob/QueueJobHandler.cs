@@ -17,9 +17,13 @@ public class QueueJobHandler(
     private readonly ILogger<QueueJobHandler> _logger = logger;
 
     public async Task<Result<Guid>> QueueJobAsync(
+        string userId,
         CancellationToken ct)
     {
-        Job job = new();
+        Job job = new()
+        {
+            OwnerId = userId,
+        };
 
         try
         {

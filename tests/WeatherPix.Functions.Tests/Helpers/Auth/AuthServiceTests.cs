@@ -20,8 +20,10 @@ public class AuthServiceTests
     private const string Audience = "api://weatherpix";
     private const string ReadPermission = "jobs:read";
     private const string CreatePermission = "jobs:create";
+    private const string Subject = "test-client";
 
-    private readonly IConfigurationManager<OpenIdConnectConfiguration> _configurationManager;
+    private readonly IConfigurationManager<OpenIdConnectConfiguration>
+        _configurationManager;
 
     private readonly RSA _rsa;
     private readonly RsaSecurityKey _securityKey;
@@ -67,7 +69,7 @@ public class AuthServiceTests
         // Act
         var result = await _authService.AuthorizeAsync(
             request,
-            "jobs:read",
+            ReadPermission,
             CancellationToken.None);
 
         // Assert
@@ -75,6 +77,7 @@ public class AuthServiceTests
         Assert.Equal(
             System.Net.HttpStatusCode.Unauthorized,
             result.StatusCode);
+        Assert.Null(result.Subject);
     }
 
     [Fact]
@@ -87,7 +90,7 @@ public class AuthServiceTests
         // Act
         var result = await _authService.AuthorizeAsync(
             request,
-            "jobs:read",
+            ReadPermission,
             CancellationToken.None);
 
         // Assert
@@ -95,6 +98,7 @@ public class AuthServiceTests
         Assert.Equal(
             System.Net.HttpStatusCode.Unauthorized,
             result.StatusCode);
+        Assert.Null(result.Subject);
     }
 
     [Fact]
@@ -104,7 +108,7 @@ public class AuthServiceTests
         var token = CreateToken(
             scopes:
             [
-                "jobs:create"
+                CreatePermission
             ]);
 
         var request = CreateRequest(
@@ -113,7 +117,7 @@ public class AuthServiceTests
         // Act
         var result = await _authService.AuthorizeAsync(
             request,
-            "jobs:read",
+            ReadPermission,
             CancellationToken.None);
 
         // Assert
@@ -121,6 +125,7 @@ public class AuthServiceTests
         Assert.Equal(
             System.Net.HttpStatusCode.Forbidden,
             result.StatusCode);
+        Assert.Null(result.Subject);
     }
 
     [Fact]
@@ -130,8 +135,8 @@ public class AuthServiceTests
         var token = CreateToken(
             scopes:
             [
-                "jobs:create",
-                "jobs:read"
+                CreatePermission,
+                ReadPermission
             ]);
 
         var request = CreateRequest(
@@ -140,7 +145,7 @@ public class AuthServiceTests
         // Act
         var result = await _authService.AuthorizeAsync(
             request,
-            "jobs:read",
+            ReadPermission,
             CancellationToken.None);
 
         // Assert
@@ -148,6 +153,37 @@ public class AuthServiceTests
         Assert.Equal(
             System.Net.HttpStatusCode.OK,
             result.StatusCode);
+        Assert.Equal(
+            Subject,
+            result.Subject);
+    }
+
+    [Fact]
+    public async Task AuthorizeAsync_WhenSubjectIsMissing_ReturnsUnauthorized()
+    {
+        // Arrange
+        var token = CreateToken(
+            scopes:
+            [
+                ReadPermission
+            ],
+            subject: null);
+
+        var request = CreateRequest(
+            $"Bearer {token}");
+
+        // Act
+        var result = await _authService.AuthorizeAsync(
+            request,
+            ReadPermission,
+            CancellationToken.None);
+
+        // Assert
+        Assert.False(result.IsAuthorized);
+        Assert.Equal(
+            System.Net.HttpStatusCode.Unauthorized,
+            result.StatusCode);
+        Assert.Null(result.Subject);
     }
 
     [Fact]
@@ -176,6 +212,7 @@ public class AuthServiceTests
         Assert.Equal(
             System.Net.HttpStatusCode.Unauthorized,
             result.StatusCode);
+        Assert.Null(result.Subject);
     }
 
     [Fact]
@@ -185,7 +222,7 @@ public class AuthServiceTests
         var token = CreateToken(
             scopes:
             [
-                "jobs:read"
+                ReadPermission
             ],
             audience: "api://wrong-api");
 
@@ -195,7 +232,7 @@ public class AuthServiceTests
         // Act
         var result = await _authService.AuthorizeAsync(
             request,
-            "jobs:read",
+            ReadPermission,
             CancellationToken.None);
 
         // Assert
@@ -203,6 +240,7 @@ public class AuthServiceTests
         Assert.Equal(
             System.Net.HttpStatusCode.Unauthorized,
             result.StatusCode);
+        Assert.Null(result.Subject);
     }
 
     private OpenIdConnectConfiguration CreateOpenIdConfiguration()
@@ -222,7 +260,8 @@ public class AuthServiceTests
         IReadOnlyCollection<string> scopes,
         DateTime? notBefore = null,
         DateTime? expires = null,
-        string? audience = null)
+        string? audience = null,
+        string? subject = Subject)
     {
         var credentials =
             new SigningCredentials(
@@ -230,11 +269,19 @@ public class AuthServiceTests
                 SecurityAlgorithms.RsaSha256);
 
         var claims = new List<Claim>
-    {
-        new(
-            "scope",
-            string.Join(' ', scopes))
-    };
+        {
+            new(
+                "scope",
+                string.Join(' ', scopes))
+        };
+
+        if (subject is not null)
+        {
+            claims.Add(
+                new Claim(
+                    "sub",
+                    subject));
+        }
 
         var now = DateTime.UtcNow;
 
@@ -246,7 +293,8 @@ public class AuthServiceTests
             expires: expires ?? now.AddMinutes(30),
             signingCredentials: credentials);
 
-        token.Header["kid"] = _securityKey.KeyId;
+        token.Header["kid"] =
+            _securityKey.KeyId;
 
         return new JwtSecurityTokenHandler()
             .WriteToken(token);

@@ -14,12 +14,14 @@ public class GetJobStatusHandler(
     private readonly ILogger<GetJobStatusHandler> _logger = logger;
 
     public async Task<Result<JobStatusDetails?>> HandleAsync(
+        string userId,
         Guid operationId,
         CancellationToken ct)
     {
         try
         {
             var job = await _jobStatusRepository.GetJobAsync(
+                userId,
                 operationId,
                 ct);
 
