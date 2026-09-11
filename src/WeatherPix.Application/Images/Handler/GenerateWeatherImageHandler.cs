@@ -1,17 +1,21 @@
 ﻿using Microsoft.Extensions.Logging;
 using WeatherPix.Application.Abstractions;
 using WeatherPix.Application.Common.Results;
+using WeatherPix.Application.Images.QueryBuilding;
+using WeatherPix.Application.Images.WeatherDetermination;
 using WeatherPix.Application.Messaging;
 using WeatherPix.Domain.Job;
 using WeatherPix.Domain.WeatherStation;
 
-namespace WeatherPix.Application.Images;
+namespace WeatherPix.Application.Images.Handler;
 
 public class GenerateWeatherImageHandler(
     IImageProvider imageProvider,
     IWeatherImageRenderer imageRenderer,
     IImageStorage imageStorage,
     IJobStatusRepository jobStatusRepository,
+    IWeatherImageQueryBuilder queryBuilder,
+    IWeatherConditionResolver weatherConditionResolver,
     ILogger<GenerateWeatherImageHandler> logger)
     : IGenerateWeatherImageHandler
 {
@@ -19,6 +23,8 @@ public class GenerateWeatherImageHandler(
     private readonly IWeatherImageRenderer _imageRenderer = imageRenderer;
     private readonly IImageStorage _imageStorage = imageStorage;
     private readonly IJobStatusRepository _jobStatusRepository = jobStatusRepository;
+    private readonly IWeatherImageQueryBuilder _queryBuilder = queryBuilder;
+    private readonly IWeatherConditionResolver _weatherConditionResolver = weatherConditionResolver;
 
     private readonly ILogger<GenerateWeatherImageHandler> _logger = logger;
 
@@ -59,8 +65,8 @@ public class GenerateWeatherImageHandler(
         GenerateImageMessage message,
         CancellationToken ct)
     {
-        var weatherData = MapToWeatherStation(message);
-        var query = BuildImageQuery(message);
+        WeatherStation weatherData = MapToWeatherStation(message);
+        var query = PrepareQuery(weatherData);
 
         await using var sourceImage =
             await _imageProvider.GetImageAsync(query, ct);
@@ -146,12 +152,6 @@ public class GenerateWeatherImageHandler(
         }
     }
 
-    private static string BuildImageQuery(
-    GenerateImageMessage message)
-    {
-        return $"{message.WeatherDescription} weather {message.Region}";
-    }
-
     private WeatherStation MapToWeatherStation(GenerateImageMessage message)
     {
         return new WeatherStation(
@@ -171,5 +171,11 @@ public class GenerateWeatherImageHandler(
             message.WindSpeedMetersPerSecond,
             message.HumidityPercentage
             );
+    }
+
+    private string PrepareQuery(WeatherStation station)
+    {
+        var conditions = _weatherConditionResolver.Resolve(station);
+        return _queryBuilder.Build(conditions);
     }
 }

@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using NSubstitute;
 using WeatherPix.Application.Abstractions;
-using WeatherPix.Application.Images;
+using WeatherPix.Application.Images.Handler;
 using WeatherPix.Application.Messaging;
 using WeatherPix.Domain.Job;
 using Xunit;

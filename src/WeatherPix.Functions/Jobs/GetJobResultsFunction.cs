@@ -12,11 +12,11 @@ using WeatherPix.Functions.Jobs.Contracts;
 namespace WeatherPix.Functions.Functions;
 
 public class GetJobResultsFunction(
-    GetJobResultsHandler handler,
+    IGetJobResultsHandler handler,
     IAuthService authService,
     IOptions<AuthOptions> options)
 {
-    private readonly GetJobResultsHandler _handler = handler;
+    private readonly IGetJobResultsHandler _handler = handler;
     private readonly IAuthService _authService = authService;
     private readonly AuthOptions _options = options.Value;
 

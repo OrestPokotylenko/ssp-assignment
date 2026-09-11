@@ -1,6 +1,6 @@
 ﻿using WeatherPix.Application.Common.Results;
 
-namespace WeatherPix.Application.Images;
+namespace WeatherPix.Application.Images.Handler;
 
 public static class ImageErrors
 {
