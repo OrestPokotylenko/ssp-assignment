@@ -1,7 +1,8 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using WeatherPix.Application.Abstractions;
-using WeatherPix.Application.Images;
+using WeatherPix.Application.Images.Handler;
+using WeatherPix.Application.Images.QueryBuilding;
+using WeatherPix.Application.Images.WeatherDetermination;
 using WeatherPix.Application.Jobs.GetResults;
 using WeatherPix.Application.Jobs.GetStatus;
 using WeatherPix.Application.Jobs.QueueJob;
@@ -22,10 +23,12 @@ public static class ApplicationServiceCollectionExtensions
             .ValidateOnStart();
 
         services.AddScoped<IQueueJobHandler, QueueJobHandler>();
+        services.AddScoped<IGetJobResultsHandler, GetJobResultsHandler>();
         services.AddScoped<IStartJobHandler, StartJobHandler>();
         services.AddScoped<IGetJobStatusHandler, GetJobStatusHandler>();
         services.AddScoped<IGenerateWeatherImageHandler, GenerateWeatherImageHandler>();
-        services.AddScoped<GetJobResultsHandler>();
+        services.AddScoped<IWeatherConditionResolver, WeatherConditionResolver>();
+        services.AddScoped<IWeatherImageQueryBuilder, WeatherImageQueryBuilder>();
 
         return services;
     }

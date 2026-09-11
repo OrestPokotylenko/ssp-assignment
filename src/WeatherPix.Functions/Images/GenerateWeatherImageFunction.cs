@@ -1,7 +1,7 @@
 using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
-using WeatherPix.Application.Images;
+using WeatherPix.Application.Images.Handler;
 using WeatherPix.Application.Messaging;
 
 namespace WeatherPix.Functions.Images;
