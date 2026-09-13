@@ -1,20 +1,28 @@
-using Azure.Monitor.OpenTelemetry.Exporter;
-using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Builder;
-using Microsoft.Azure.Functions.Worker.OpenTelemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using OpenTelemetry;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using WeatherPix.Application.DependencyInjection;
+using WeatherPix.Functions.DependencyInjection;
+using WeatherPix.Infrastructure.DependencyInjection;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
 builder.ConfigureFunctionsWebApplication();
 
-if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("APPLICATIONINSIGHTS_CONNECTION_STRING")))
+builder.Services.Configure<JsonSerializerOptions>(options =>
 {
-    builder.Services.AddOpenTelemetry()
-        .UseFunctionsWorkerDefaults()
-        .UseAzureMonitorExporter();
-}
+    options.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    options.Converters.Add(new JsonStringEnumConverter(
+        JsonNamingPolicy.CamelCase));
+});
+
+var cfg = builder.Configuration;
+
+builder.Services
+    .AddApplication(cfg)
+    .AddInfrastructure(cfg, builder.Environment)
+    .AddAuth(cfg);
 
 builder.Build().Run();

@@ -1,0 +1,149 @@
+param name string
+param planName string
+
+param location string
+param tags object = {}
+
+@allowed([
+  'Staging'
+  'Production'
+])
+param functionsEnvironment string
+
+param storageAccountName string
+param storageBlobEndpoint string
+param deploymentContainerName string
+param sasExpirationMinutes int
+param sasClockSkewMinutes int
+
+param serviceBusFullyQualifiedNamespace string
+param startJobsQueueName string
+param imageJobsQueueName string
+
+param generatedImagesContainerName string
+param jobStatusTableName string
+
+param keyVaultUri string
+param pexelsSecretName string
+
+param weatherStationCount int
+param buienradarBaseUrl string
+param pexelsBaseUrl string
+
+param authDomain string
+param authAudience string
+param authReadPermission string
+param authCreatePermission string
+
+@allowed([
+  512
+  2048
+  4096
+])
+param instanceMemoryMB int = 2048
+
+param maximumInstanceCount int = 40
+
+resource hostingPlan 'Microsoft.Web/serverfarms@2024-04-01' = {
+  name: planName
+  location: location
+  tags: tags
+
+  kind: 'functionapp'
+
+  sku: {
+    name: 'FC1'
+    tier: 'FlexConsumption'
+  }
+
+  properties: {
+    reserved: true
+  }
+}
+
+resource functionApp 'Microsoft.Web/sites@2024-04-01' = {
+  name: name
+  location: location
+  tags: tags
+
+  kind: 'functionapp,linux'
+
+  identity: {
+    type: 'SystemAssigned'
+  }
+
+  properties: {
+    serverFarmId: hostingPlan.id
+    httpsOnly: true
+
+    siteConfig: {
+      minTlsVersion: '1.2'
+    }
+
+    functionAppConfig: {
+      deployment: {
+        storage: {
+          type: 'blobContainer'
+          value: '${storageBlobEndpoint}${deploymentContainerName}'
+
+          authentication: {
+            type: 'SystemAssignedIdentity'
+          }
+        }
+      }
+
+      scaleAndConcurrency: {
+        maximumInstanceCount: maximumInstanceCount
+        instanceMemoryMB: instanceMemoryMB
+      }
+
+      runtime: {
+        name: 'dotnet-isolated'
+        version: '10.0'
+      }
+    }
+  }
+}
+
+resource appSettings 'Microsoft.Web/sites/config@2024-04-01' = {
+  parent: functionApp
+  name: 'appsettings'
+
+  properties: {
+    AzureWebJobsStorage__accountName: storageAccountName
+    AzureWebJobsStorage__credential: 'managedidentity'
+    AZURE_FUNCTIONS_ENVIRONMENT: functionsEnvironment
+
+    ServiceBus__fullyQualifiedNamespace: serviceBusFullyQualifiedNamespace
+    ServiceBus__credential: 'managedidentity'
+
+    ServiceBus__StartJobsQueueName: startJobsQueueName
+    ServiceBus__ImageJobsQueueName: imageJobsQueueName
+
+    Storage__BlobServiceUri: 'https://${storageAccountName}.blob.${environment().suffixes.storage}'
+    Storage__TableServiceUri: 'https://${storageAccountName}.table.${environment().suffixes.storage}'
+
+    Storage__GeneratedImagesContainerName: generatedImagesContainerName
+    Storage__JobStatusTableName: jobStatusTableName
+
+    Storage__SasExpirationMinutes: string(sasExpirationMinutes)
+    Storage__SasClockSkewMinutes: string(sasClockSkewMinutes)
+
+    WeatherStation__Count: string(weatherStationCount)
+
+    Buienradar__BaseUrl: buienradarBaseUrl
+
+    Pexels__BaseUrl: pexelsBaseUrl
+    Pexels__ApiKey: '@Microsoft.KeyVault(SecretUri=${keyVaultUri}secrets/${pexelsSecretName}/)'
+
+    Auth__Domain: authDomain
+    Auth__Audience: authAudience
+    Auth__ReadPermission: authReadPermission
+    Auth__CreatePermission: authCreatePermission
+  }
+}
+
+output id string = functionApp.id
+output name string = functionApp.name
+output principalId string = functionApp.identity.principalId
+output defaultHostname string = functionApp.properties.defaultHostName

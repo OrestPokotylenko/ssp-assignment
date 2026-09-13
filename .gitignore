@@ -441,3 +441,13 @@ local.settings.json
 # Local Bicep parameters that may contain secrets
 *.local.bicepparam
 *.local.parameters.json
+
+# HTTP client private environment
+**/http-client.env.json.user
+
+# Test results
+**/TestResults/
+
+# Coverage
+**/coverage/
+**/coverage.*

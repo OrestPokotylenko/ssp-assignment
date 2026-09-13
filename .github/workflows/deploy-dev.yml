@@ -1,0 +1,66 @@
+name: Deploy DEV
+
+on:
+  push:
+    branches:
+      - develop
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  actions: read
+  packages: read
+  security-events: write
+
+concurrency:
+  group: deploy-development
+  cancel-in-progress: true
+
+jobs:
+  dotnet:
+    name: .NET Validation
+    uses: ./.github/workflows/reusable-dotnet-validation.yml
+    with:
+      solution: WeatherPix.slnx
+    secrets: inherit
+
+  security:
+    name: Security Validation
+    uses: ./.github/workflows/reusable-security-validation.yml
+
+  infrastructure:
+    name: Infrastructure Validation
+    uses: ./.github/workflows/reusable-iac-validation.yml
+    with:
+      bicep-file: infra/main.bicep
+
+  codeql:
+    name: CodeQL
+    permissions:
+      contents: read
+      actions: read
+      packages: read
+      security-events: write
+    uses: ./.github/workflows/reusable-codeql-validation.yml
+    secrets: inherit
+
+  deploy:
+    name: Deploy DEV
+    needs:
+      - dotnet
+      - security
+      - infrastructure
+      - codeql
+
+    permissions:
+      contents: read
+      id-token: write
+
+    uses: ./.github/workflows/reusable-deploy.yml
+    with:
+      environment: development
+      parameter-file: infra/parameters/dev.bicepparam
+
+    secrets: inherit
