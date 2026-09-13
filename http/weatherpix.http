@@ -1,4 +1,4 @@
-@baseUrl = http://localhost:7278/api
+@baseUrl = https://func-weatherpix-prod-muwqw.azurewebsites.net/api
 
 ### Get Auth0 token
 # @name auth
